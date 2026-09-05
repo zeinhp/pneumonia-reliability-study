@@ -1,0 +1,21 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__clean__efficientnet_b0__seed_42",
+  "history": [
+    {
+      "stage": 1,
+      "epoch": 1,
+      "train_loss": 2.4746322631835938,
+      "val_loss": 2.2053539752960205,
+      "val_auroc": 0.828125,
+      "lr": 0.0003
+    },
+    {
+      "stage": 2,
+      "epoch": 1,
+      "train_loss": 1.8338747024536133,
+      "val_loss": 2.2732250690460205,
+      "val_auroc": 0.84375,
+      "lr": 0.0001
+    }
+  ]
+}

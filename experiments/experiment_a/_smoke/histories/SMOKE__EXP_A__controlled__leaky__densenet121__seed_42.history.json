@@ -1,0 +1,21 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__leaky__densenet121__seed_42",
+  "history": [
+    {
+      "stage": 1,
+      "epoch": 1,
+      "train_loss": 0.6538718938827515,
+      "val_loss": 0.7112184166908264,
+      "val_auroc": 0.59375,
+      "lr": 0.0003
+    },
+    {
+      "stage": 2,
+      "epoch": 1,
+      "train_loss": 0.6626274585723877,
+      "val_loss": 0.6848588585853577,
+      "val_auroc": 0.671875,
+      "lr": 0.0001
+    }
+  ]
+}

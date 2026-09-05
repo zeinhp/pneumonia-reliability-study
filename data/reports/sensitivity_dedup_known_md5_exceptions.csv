@@ -1,0 +1,2 @@
+relative_path_1,found_in_1,relative_path_2,found_in_2,md5,reason
+test/NORMAL/NORMAL2-IM-0095-0001.jpeg,sibling(not-in-train);leaky_train,test/NORMAL/NORMAL2-IM-0096-0001.jpeg,clean_train;leaky_train,f9528b244ccd49f3d89ead90ba09c520,exact_duplicate_md5_identical_but_source_patient_id_differs_(IM-0095_test_vs_IM-0096_train); sengaja disertakan di cohort non-dedup per keputusan user 2026-08-02 - INI JUSTRU YANG DIUJI

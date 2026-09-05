@@ -1,0 +1,320 @@
+{
+  "validated_at": "2026-08-01T07:25:00.581961",
+  "primary_analysis_status": "PASS",
+  "sensitivity_analysis_status": "PASS_WITH_KNOWN_SENSITIVITY_ISSUES",
+  "primary_checks": [
+    {
+      "check": "all_paths_exist__original_deduplicated",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "no_duplicate_path__original_deduplicated",
+      "status": "PASS",
+      "detail": "0 duplicated relative_path rows"
+    },
+    {
+      "check": "image_in_single_split__original_deduplicated",
+      "status": "PASS",
+      "detail": "0 images in >1 split"
+    },
+    {
+      "check": "label_valid__original_deduplicated",
+      "status": "PASS",
+      "detail": "unexpected labels: set()"
+    },
+    {
+      "check": "both_classes_present__original_deduplicated",
+      "status": "PASS",
+      "detail": "splits missing a class: []"
+    },
+    {
+      "check": "paths_are_relative__original_deduplicated",
+      "status": "PASS",
+      "detail": "absolute path detected: False"
+    },
+    {
+      "check": "test_set_not_empty__original_deduplicated",
+      "status": "PASS",
+      "detail": "n_test=618"
+    },
+    {
+      "check": "no_repeated_md5__original_deduplicated",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_cross_split_exact_duplicate_groups__original_deduplicated",
+      "status": "PASS",
+      "detail": "0 exact-duplicate groups span >1 split"
+    },
+    {
+      "check": "all_paths_exist__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "no_duplicate_path__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "0 duplicated relative_path rows"
+    },
+    {
+      "check": "image_in_single_split__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "0 images in >1 split"
+    },
+    {
+      "check": "label_valid__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "unexpected labels: set()"
+    },
+    {
+      "check": "both_classes_present__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "splits missing a class: []"
+    },
+    {
+      "check": "paths_are_relative__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "absolute path detected: False"
+    },
+    {
+      "check": "test_set_not_empty__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "n_test=583"
+    },
+    {
+      "check": "no_repeated_md5__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_cross_split_exact_duplicate_groups__image_level_stratified_deduplicated",
+      "status": "PASS",
+      "detail": "0 exact-duplicate groups span >1 split"
+    },
+    {
+      "check": "all_paths_exist__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "no_duplicate_path__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "0 duplicated relative_path rows"
+    },
+    {
+      "check": "image_in_single_split__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "0 images in >1 split"
+    },
+    {
+      "check": "label_valid__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "unexpected labels: set()"
+    },
+    {
+      "check": "both_classes_present__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "splits missing a class: []"
+    },
+    {
+      "check": "paths_are_relative__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "absolute path detected: False"
+    },
+    {
+      "check": "test_set_not_empty__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "n_test=614"
+    },
+    {
+      "check": "no_repeated_md5__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_cross_split_exact_duplicate_groups__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "0 exact-duplicate groups span >1 split"
+    },
+    {
+      "check": "zero_patient_overlap__patient_grouped_deduplicated",
+      "status": "PASS",
+      "detail": "0 overlapping patients"
+    },
+    {
+      "check": "primary_manifests_share_identical_cohort",
+      "status": "PASS",
+      "detail": "cohort sizes: [5824, 5824, 5824], equal=True"
+    },
+    {
+      "check": "source_audit_checksums_unchanged",
+      "status": "PASS",
+      "detail": "mismatched files: []"
+    }
+  ],
+  "sensitivity_checks": [
+    {
+      "check": "all_paths_exist__original_all_images",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "no_duplicate_path__original_all_images",
+      "status": "PASS",
+      "detail": "0 duplicated relative_path rows"
+    },
+    {
+      "check": "image_in_single_split__original_all_images",
+      "status": "PASS",
+      "detail": "0 images in >1 split"
+    },
+    {
+      "check": "label_valid__original_all_images",
+      "status": "PASS",
+      "detail": "unexpected labels: set()"
+    },
+    {
+      "check": "both_classes_present__original_all_images",
+      "status": "PASS",
+      "detail": "splits missing a class: []"
+    },
+    {
+      "check": "paths_are_relative__original_all_images",
+      "status": "PASS",
+      "detail": "absolute path detected: False"
+    },
+    {
+      "check": "test_set_not_empty__original_all_images",
+      "status": "PASS",
+      "detail": "n_test=624"
+    },
+    {
+      "check": "known_patient_overlap__original_all_images",
+      "status": "PASS",
+      "detail": "264 overlapping patients (known/expected for this uncorrected manifest)"
+    },
+    {
+      "check": "repeated_md5_recorded__original_all_images",
+      "status": "KNOWN_ISSUE_OR_FAIL",
+      "detail": "32 repeated md5"
+    },
+    {
+      "check": "cross_split_exact_duplicate_groups_recorded__original_all_images",
+      "status": "PASS",
+      "detail": "0 cross-split exact-duplicate groups"
+    },
+    {
+      "check": "all_paths_exist__image_level_all_images",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "no_duplicate_path__image_level_all_images",
+      "status": "PASS",
+      "detail": "0 duplicated relative_path rows"
+    },
+    {
+      "check": "image_in_single_split__image_level_all_images",
+      "status": "PASS",
+      "detail": "0 images in >1 split"
+    },
+    {
+      "check": "label_valid__image_level_all_images",
+      "status": "PASS",
+      "detail": "unexpected labels: set()"
+    },
+    {
+      "check": "both_classes_present__image_level_all_images",
+      "status": "PASS",
+      "detail": "splits missing a class: []"
+    },
+    {
+      "check": "paths_are_relative__image_level_all_images",
+      "status": "PASS",
+      "detail": "absolute path detected: False"
+    },
+    {
+      "check": "test_set_not_empty__image_level_all_images",
+      "status": "PASS",
+      "detail": "n_test=586"
+    },
+    {
+      "check": "known_patient_overlap__image_level_all_images",
+      "status": "PASS",
+      "detail": "684 overlapping patients (known/expected for this uncorrected manifest)"
+    },
+    {
+      "check": "repeated_md5_recorded__image_level_all_images",
+      "status": "KNOWN_ISSUE_OR_FAIL",
+      "detail": "32 repeated md5"
+    },
+    {
+      "check": "cross_split_exact_duplicate_groups_recorded__image_level_all_images",
+      "status": "KNOWN_ISSUE_OR_FAIL",
+      "detail": "7 cross-split exact-duplicate groups"
+    },
+    {
+      "check": "all_paths_exist__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "no_duplicate_path__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "0 duplicated relative_path rows"
+    },
+    {
+      "check": "image_in_single_split__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "0 images in >1 split"
+    },
+    {
+      "check": "label_valid__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "unexpected labels: set()"
+    },
+    {
+      "check": "both_classes_present__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "splits missing a class: []"
+    },
+    {
+      "check": "paths_are_relative__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "absolute path detected: False"
+    },
+    {
+      "check": "test_set_not_empty__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "n_test=615"
+    },
+    {
+      "check": "patient_overlap_recorded__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "0 overlapping patients (informational)"
+    },
+    {
+      "check": "repeated_md5_recorded__patient_grouped_all_images",
+      "status": "KNOWN_ISSUE_OR_FAIL",
+      "detail": "32 repeated md5"
+    },
+    {
+      "check": "known_cross_split_exact_duplicate_groups__patient_grouped_all_images",
+      "status": "PASS",
+      "detail": "1 cross-split exact-duplicate groups (known issue: IM-0095/IM-0096, MD5 f9528b244ccd49f3d89ead90ba09c520)"
+    }
+  ],
+  "known_sensitivity_issues": {
+    "original_split_manifest.csv": {
+      "expected_min_patient_overlap": 1
+    },
+    "image_stratified_split_manifest.csv": {
+      "expected_min_patient_overlap": 1
+    },
+    "patient_grouped_split_all_images.csv": {
+      "expected_cross_split_dup_groups": 1
+    }
+  }
+}

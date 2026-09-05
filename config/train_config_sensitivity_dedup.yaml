@@ -1,0 +1,116 @@
+# train_config_sensitivity_dedup.yaml
+# ---------------------------------------------------------------------------
+# Sensitivity-dedup (protokol bagian 28, "Eksperimen B" versi protokol asli).
+# IDENTIK dgn config/train_config.yaml (hyperparameter Eksperimen A) di
+# SETIAP baris KECUALI bagian `manifests` di bawah, yg diarahkan ke lima
+# manifest cohort non-dedup (5.856 citra, termasuk 32 exact-duplicate yg di
+# Eksperimen A dikeluarkan) dibangun oleh
+# src/build_controlled_manifests_sensitivity_dedup.py + divalidasi PASS oleh
+# src/validate_controlled_manifests_sensitivity_dedup.py.
+#
+# Tujuan menjaga hyperparameter identik: supaya perbandingan clean-vs-leaky
+# ΔAUROC di cohort non-dedup ini apple-to-apple dgn hasil Eksperimen A (cohort
+# dedup) - satu-satunya variabel yg berubah adalah keputusan deduplikasi.
+#
+# Semua hasil dari config ini EXPLORATORY (protokol §24) - anchor test sudah
+# terbuka sejak Fase 5 Eksperimen A. TIDAK mengubah kesimpulan confirmatory A.
+# ---------------------------------------------------------------------------
+protocol_version: "1.0"
+
+seeds:
+  main: [42, 123, 456, 789, 2026]      # sama Eksperimen A - 5 seed x 3 arch x 2 kondisi = 30 run
+  secondary: [42, 456, 2026]
+
+# --- Preprocessing (protokol 8) - identik Eksperimen A ---
+image:
+  size: 224
+  interpolation: bilinear
+  grayscale_to_rgb: true
+  square_pad: true
+  pad_value: 0
+  normalize_mean: [0.485, 0.456, 0.406]
+  normalize_std:  [0.229, 0.224, 0.225]
+
+# --- Augmentation training saja (protokol 9) - identik Eksperimen A ---
+augmentation:
+  rotation_deg: 7.0
+  translate_frac: 0.05
+  scale_min: 0.95
+  scale_max: 1.05
+  brightness: 0.10
+  contrast: 0.10
+
+# --- Loss (protokol 10) - identik Eksperimen A ---
+loss:
+  type: BCEWithLogitsLoss
+  class_weighting: false
+
+# --- Strategi training (protokol 11) - identik Eksperimen A ---
+training:
+  stage1_head_epochs: 3
+  stage1_lr: 0.0003
+  stage2_max_epochs: 40
+  stage2_lr: 0.0001
+  optimizer: AdamW
+  weight_decay: 0.0001
+  betas: [0.9, 0.999]
+  batch_size: 32
+  effective_batch_size: 32
+  grad_clip_max_norm: 1.0
+  amp: false
+
+# --- Scheduler (protokol 11.3) - identik Eksperimen A ---
+scheduler:
+  type: ReduceLROnPlateau
+  mode: max
+  monitor: val_auroc
+  factor: 0.5
+  patience: 3
+  min_lr: 0.000001
+
+# --- Early stopping (protokol 11.4) - identik Eksperimen A ---
+early_stopping:
+  monitor: val_auroc
+  mode: max
+  patience: 7
+  min_delta: 0.001
+  tie_breaker: val_loss
+
+# --- Threshold (protokol 13.3) - identik Eksperimen A ---
+threshold:
+  primary: 0.5
+  youden_from_validation: true
+
+# --- Determinisme (CLAUDE.md #4) - identik Eksperimen A ---
+determinism:
+  use_deterministic_algorithms: true
+  cudnn_deterministic: true
+  cudnn_benchmark: false
+
+# --- DataLoader - identik Eksperimen A ---
+dataloader:
+  num_workers: 2
+  pin_memory: true
+
+# --- Label encoding - identik Eksperimen A ---
+label:
+  positive_class: PNEUMONIA
+  negative_class: NORMAL
+
+# --- Arsitektur - identik Eksperimen A ---
+architectures:
+  densenet121: densenet121
+  efficientnet_b0: efficientnet_b0
+  swin_tiny: swin_tiny_patch4_window7_224
+
+# --- Manifest per kondisi: SATU-SATUNYA PERBEDAAN dgn train_config.yaml.
+#     Cohort non-dedup (5.856 citra), dibangun & divalidasi terpisah dari
+#     cohort dedup Eksperimen A (5.824 citra). Validation IDENTIK utk clean & leaky. ---
+manifests:
+  clean:
+    train: controlled_clean_train_nondedup.csv
+    validation: controlled_clean_validation_nondedup.csv
+  leaky:
+    train: controlled_leaky_train_nondedup.csv
+    validation: controlled_clean_validation_nondedup.csv
+  anchor_test: controlled_anchor_test_nondedup.csv   # HANYA dibuka pasca semua checkpoint terkunci

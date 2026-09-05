@@ -1,0 +1,7 @@
+split,label,L,RGB
+test,NORMAL,234,0
+test,PNEUMONIA,390,0
+train,NORMAL,1341,0
+train,PNEUMONIA,3592,283
+val,NORMAL,8,0
+val,PNEUMONIA,8,0

@@ -1,0 +1,122 @@
+{
+  "audit_date_frozen": "2026-07-23",
+  "validated_at": "2026-07-24T08:44:20.340116",
+  "data_root": "/sessions/beautiful-tender-feynman/mnt/Pneumonia/chest_xray/chest_xray",
+  "overall_status": "PASS",
+  "checks": [
+    {
+      "check": "manifest_row_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 5856, expected 5856"
+    },
+    {
+      "check": "unique_patient_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 2790, expected 2790"
+    },
+    {
+      "check": "no_empty_patient_id",
+      "status": "PASS",
+      "core": true,
+      "detail": "0 empty patient_id rows"
+    },
+    {
+      "check": "no_duplicate_filepath",
+      "status": "PASS",
+      "core": true,
+      "detail": "0 duplicate filepath rows"
+    },
+    {
+      "check": "no_patient_with_mixed_labels",
+      "status": "PASS",
+      "core": true,
+      "detail": "0 patients with both NORMAL and PNEUMONIA"
+    },
+    {
+      "check": "label_domain_valid",
+      "status": "PASS",
+      "core": true,
+      "detail": "unexpected labels: set()"
+    },
+    {
+      "check": "split_domain_valid",
+      "status": "PASS",
+      "core": true,
+      "detail": "unexpected splits: set()"
+    },
+    {
+      "check": "original_split_patient_overlap_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 264, expected 264"
+    },
+    {
+      "check": "exact_dup_file_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 62, expected 62"
+    },
+    {
+      "check": "exact_dup_group_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 30, expected 30"
+    },
+    {
+      "check": "proposed_mapping_row_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 5856, expected 5856"
+    },
+    {
+      "check": "proposed_files_exist_in_manifest",
+      "status": "PASS",
+      "core": true,
+      "detail": "0 proposed rows not found in source manifest"
+    },
+    {
+      "check": "proposed_mapping_no_duplicate_files",
+      "status": "PASS",
+      "core": true,
+      "detail": "0 duplicated file entries in proposed mapping"
+    },
+    {
+      "check": "proposed_split_zero_patient_overlap",
+      "status": "PASS",
+      "core": true,
+      "detail": "0 patients span multiple proposed splits"
+    },
+    {
+      "check": "proposed_train_new_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 4634, expected 4634"
+    },
+    {
+      "check": "proposed_val_new_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 607, expected 607"
+    },
+    {
+      "check": "proposed_test_new_count",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 615, expected 615"
+    },
+    {
+      "check": "all_manifest_images_exist_at_project_data_root",
+      "status": "PASS",
+      "core": true,
+      "detail": "0 missing files at /sessions/beautiful-tender-feynman/mnt/Pneumonia/chest_xray/chest_xray"
+    },
+    {
+      "check": "data_root_file_count_matches_manifest",
+      "status": "PASS",
+      "core": true,
+      "detail": "got 5856 files at data root, manifest has 5856 rows"
+    }
+  ]
+}

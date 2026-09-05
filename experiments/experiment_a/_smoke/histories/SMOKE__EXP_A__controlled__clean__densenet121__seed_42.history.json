@@ -1,0 +1,21 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__clean__densenet121__seed_42",
+  "history": [
+    {
+      "stage": 1,
+      "epoch": 1,
+      "train_loss": 0.6804188974201679,
+      "val_loss": 0.5849519371986389,
+      "val_auroc": 0.853515625,
+      "lr": 0.0003
+    },
+    {
+      "stage": 2,
+      "epoch": 1,
+      "train_loss": 0.45848540402948856,
+      "val_loss": 0.3240440972149372,
+      "val_auroc": 0.966064453125,
+      "lr": 0.0001
+    }
+  ]
+}

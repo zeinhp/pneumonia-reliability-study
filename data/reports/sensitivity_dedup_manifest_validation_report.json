@@ -1,0 +1,138 @@
+{
+  "validated_at": "2026-08-02T07:46:34.029715",
+  "overall_status": "PASS",
+  "K_sibling_eligible_patients": 146,
+  "cohort": "global_all_images_5856_sensitivity_dedup",
+  "checks": [
+    {
+      "check": "anchor_exactly_one_image_per_patient",
+      "status": "PASS",
+      "detail": "n=279, duplicated patient_id rows=0"
+    },
+    {
+      "check": "anchor_test_not_leaked_into_any_train_or_validation_by_path",
+      "status": "PASS",
+      "detail": "clean_train=0 leaky_train=0 val=0"
+    },
+    {
+      "check": "anchor_test_zero_internal_repeated_md5",
+      "status": "PASS",
+      "detail": "0 repeated md5 within anchor test"
+    },
+    {
+      "check": "clean_condition_zero_md5_overlap_with_anchor_test",
+      "status": "PASS",
+      "detail": "0 md5 shared between anchor test and clean train+validation"
+    },
+    {
+      "check": "leaky_condition_zero_md5_overlap_with_anchor_test_itself",
+      "status": "PASS",
+      "detail": "0 md5 shared between anchor test and leaky train (anchor image byte-content must never appear in ANY train, leaky included)"
+    },
+    {
+      "check": "validation_shared_identically_by_clean_and_leaky",
+      "status": "PASS",
+      "detail": "single controlled_clean_validation_nondedup.csv is used unmodified for both conditions"
+    },
+    {
+      "check": "train_size_clean_equals_leaky",
+      "status": "PASS",
+      "detail": "clean=4634 leaky=4634"
+    },
+    {
+      "check": "class_distribution_train_comparable",
+      "status": "PASS",
+      "detail": "clean={'NORMAL': 1273, 'PNEUMONIA': 3361} leaky={'NORMAL': 1273, 'PNEUMONIA': 3361}"
+    },
+    {
+      "check": "repeated_md5_all_explained_by_known_dedup_allowlist__clean_train",
+      "status": "PASS",
+      "detail": "50 total repeated-md5 rows, 0 NOT in 32-pair allowlist"
+    },
+    {
+      "check": "repeated_md5_all_explained_by_known_dedup_allowlist__leaky_train",
+      "status": "PASS",
+      "detail": "50 total repeated-md5 rows, 0 NOT in 32-pair allowlist"
+    },
+    {
+      "check": "repeated_md5_all_explained_by_known_dedup_allowlist__clean_validation",
+      "status": "PASS",
+      "detail": "8 total repeated-md5 rows, 0 NOT in 32-pair allowlist"
+    },
+    {
+      "check": "known_special_pair_IM0095_IM0096_occurs_as_expected",
+      "status": "PASS",
+      "detail": "clean_train occurrences=1 (expected 1, hanya IM-0096), leaky_train occurrences=2 (expected 2, IM-0096 + IM-0095-sibling)"
+    },
+    {
+      "check": "no_path_overlap_train_test__clean",
+      "status": "PASS",
+      "detail": "0 overlapping paths"
+    },
+    {
+      "check": "no_path_overlap_train_test__leaky",
+      "status": "PASS",
+      "detail": "0 overlapping paths"
+    },
+    {
+      "check": "clean_condition_zero_patient_overlap",
+      "status": "PASS",
+      "detail": "train-val=0 train-test=0 val-test=0"
+    },
+    {
+      "check": "leaky_condition_patient_overlap_matches_contamination_map_exactly",
+      "status": "PASS",
+      "detail": "train-test overlap=146 (planned K=146, match=True); train-val=0; val-test=0"
+    },
+    {
+      "check": "all_siblings_originate_from_anchor_test_patients",
+      "status": "PASS",
+      "detail": "0 sibling patients NOT in anchor test"
+    },
+    {
+      "check": "replacement_images_not_from_validation_or_test_patients",
+      "status": "PASS",
+      "detail": "0 replaced patients found in validation/test"
+    },
+    {
+      "check": "replacement_max_one_image_per_training_patient",
+      "status": "PASS",
+      "detail": "0 training patients had >1 image replaced"
+    },
+    {
+      "check": "source_audit_checksums_unchanged",
+      "status": "PASS",
+      "detail": "mismatched files: []"
+    },
+    {
+      "check": "all_paths_exist__anchor_test",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "all_paths_exist__clean_train",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "all_paths_exist__clean_validation",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "all_paths_exist__leaky_train",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "nondedup_source_split_total_equals_dedup_plus_32",
+      "status": "PASS",
+      "detail": "patient_grouped_split_all_images.csv rows=5856, dedup total=5824 (+32 expected)"
+    },
+    {
+      "check": "clean_train_plus_val_plus_anchor_matches_train_val_counts_of_source_split",
+      "status": "PASS",
+      "detail": "sanity: controlled manifest train/val row counts match source split train/val row counts (anchor is by-construction 279, not full 615-row test_df, sama seperti cohort dedup: anchor 279 dari test 614)"
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+# split_config.yaml
+# Describes every split strategy used in this project and its provenance.
+#
+# Two cohorts exist:
+#   all_images_5856               - every image in the source audit, including
+#                                    the 62 exact-duplicate files. SENSITIVITY
+#                                    ONLY - never used as the primary analysis.
+#   global_exact_deduplicated_5824 - all_images_5856 minus the 32 non-representative
+#                                    exact-duplicate files (see
+#                                    data/manifests/global_deduplication_keep_set.csv).
+#                                    PRIMARY analysis cohort.
+#
+# The three PRIMARY manifests (original_deduplicated, image_level_stratified_
+# deduplicated, patient_grouped_deduplicated) all share the identical 5,824-image
+# cohort - only the split assignment differs between them. This is what makes
+# them fairly comparable in Experiment A.
+
+cohorts:
+  all_images_5856:
+    description: "Every image in the frozen manifest.csv, including the 62 exact-duplicate files across 30 MD5 groups."
+    n_images: 5856
+    analysis_role: sensitivity_only
+
+  global_exact_deduplicated_5824:
+    description: "all_images_5856 minus the 32 non-representative exact-duplicate files, per the deterministic global keep-set."
+    n_images: 5824
+    analysis_role: primary
+    keep_set_manifest: data/manifests/global_deduplication_keep_set.csv
+    dedup_rule: lexicographically_smallest_filename_within_md5_group
+
+splits:
+  original:
+    description: "Unmodified train/val/test split as shipped by the Kaggle dataset. All-images cohort."
+    method: original
+    seed: null
+    cohort: all_images_5856
+    analysis_role: sensitivity_only
+    patient_grouped: false
+    patient_overlap_expected: true
+    n_patient_overlap: 264
+    manifest: data/manifests/original_split_manifest.csv
+    notes: "Preserved on purpose as the uncorrected baseline for comparison. NOT primary-eligible: contains 32 exact-duplicate files."
+
+  image_level_stratified:
+    description: "Control split: stratified by label only, image-level (no patient grouping). All-images cohort."
+    method: image_level_stratified
+    seed: 42
+    ratio: {train: 0.80, validation: 0.10, test: 0.10}
+    cohort: all_images_5856
+    analysis_role: sensitivity_only
+    patient_grouped: false
+    patient_overlap_expected: true
+    manifest: data/manifests/image_stratified_split_manifest.csv
+    notes: "Patient overlap is measured and reported, never removed. NOT primary-eligible: contains 32 exact-duplicate files and, incidentally, 7 exact-duplicate groups that span splits (a consequence of random image-level assignment, not a defect)."
+
+  patient_grouped_frozen:
+    description: "Official patient-grouped stratified split, frozen from the prior audit's proposed_split_mapping.csv. NOT recomputed by this project. All-images cohort."
+    method: patient_level_grouped_stratified_frozen
+    seed: 42
+    split_source: data/source_audit/proposed_split_mapping.csv
+    cohort: all_images_5856
+    analysis_role: sensitivity_only
+    patient_grouped: true
+    patient_overlap_expected: false
+    n_patient_overlap: 0
+    manifest: data/manifests/patient_grouped_split_all_images.csv
+    counts: {train: 4634, validation: 607, test: 615}
+    primary_eligible: false
+    ineligibility_reason: "exact_duplicate_md5_spans_train_and_test (IM-0095 in test, IM-0096 in train, MD5 f9528b244ccd49f3d89ead90ba09c520)"
+
+  original_deduplicated:
+    description: "PRIMARY CONTROL. Original train/val/test assignment, filtered to the deduplicated cohort. Patient overlap intentionally preserved as the characteristic being studied."
+    method: original_deduplicated
+    seed: null
+    cohort: global_exact_deduplicated_5824
+    analysis_role: primary_control
+    patient_grouped: false
+    patient_overlap_expected: true
+    n_patient_overlap: 264
+    manifest: data/manifests/original_split_deduplicated.csv
+    counts: {train: 5190, validation: 16, test: 618}
+
+  image_level_stratified_deduplicated:
+    description: "PRIMARY CONTROL. Fresh 80/10/10 image-level stratified split built directly on the deduplicated cohort (NOT a filter of the all-images split, which would have skewed the ratio)."
+    method: image_level_stratified_deduplicated
+    seed: 42
+    ratio: {train: 0.80, validation: 0.10, test: 0.10}
+    cohort: global_exact_deduplicated_5824
+    analysis_role: primary_control
+    patient_grouped: false
+    patient_overlap_expected: true
+    n_patient_overlap: 649
+    manifest: data/manifests/image_stratified_split_deduplicated.csv
+    counts: {train: 4658, validation: 583, test: 583}
+
+  patient_grouped_deduplicated:
+    description: "PRIMARY. The frozen patient-grouped split, filtered to the deduplicated cohort. StratifiedGroupKFold is NOT re-run. This resolves the IM-0095/IM-0096 cross-split leak: only IM-0095 (the representative) remains."
+    method: patient_level_grouped_stratified_frozen_deduplicated
+    seed: 42
+    derived_from: data/manifests/patient_grouped_split_all_images.csv
+    dedup_rule: lexicographically_smallest_filename_within_md5_group
+    cohort: global_exact_deduplicated_5824
+    analysis_role: primary
+    patient_overlap_expected: false
+    n_patient_overlap: 0
+    manifest: data/manifests/patient_grouped_split_deduplicated.csv
+    counts: {train: 4607, validation: 603, test: 614}
+
+primary_manifests_cohort_check:
+  description: "The three primary manifests must share an identical set of relative_path values (5,824 images) - only split assignment may differ."
+  members:
+    - data/manifests/original_split_deduplicated.csv
+    - data/manifests/image_stratified_split_deduplicated.csv
+    - data/manifests/patient_grouped_split_deduplicated.csv
+  verified_by: src/create_deduplicated_manifest.py (build-time) and src/validate_splits.py (validation-time)

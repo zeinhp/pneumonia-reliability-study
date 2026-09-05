@@ -1,0 +1,61 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__clean__efficientnet_b0__seed_42",
+  "timestamp": "2026-07-24T07:47:57Z",
+  "git_commit": "UNKNOWN",
+  "analysis": "controlled",
+  "condition": "clean",
+  "manifest_train": "controlled_clean_train.csv",
+  "manifest_validation": "controlled_clean_validation.csv",
+  "manifest_train_sha256": "a1188deb38b524f268149bf3e1ccf9bbb0ada32ebcd6a31f0d07a4b0f56cbd53",
+  "manifest_validation_sha256": "b0455d6a456cac0bef0e01174bcdc52e7804cf9b117611fd718694cae236d2b8",
+  "protocol_version": "1.0",
+  "config_sha256": "80ab49da2014ecf92d1e37a0fc900bdf3ef9f0a4264dfe8bf801e57ba4603f87",
+  "architecture": "efficientnet_b0",
+  "pretrained_weights": "imagenet",
+  "seed": 42,
+  "hardware": [
+    {
+      "index": 0,
+      "name": "NVIDIA GeForce GTX 1080",
+      "total_memory_MB": 8192,
+      "capability": "6.1"
+    },
+    {
+      "index": 1,
+      "name": "NVIDIA GeForce GTX 1080",
+      "total_memory_MB": 8192,
+      "capability": "6.1"
+    }
+  ],
+  "software_versions": {
+    "python": "3.11.9",
+    "os": "Windows 10",
+    "torch": "2.5.1+cu121",
+    "torchvision": "0.20.1+cu121",
+    "timm": "1.0.28",
+    "cuda_version": "12.1",
+    "cudnn_version": 90100
+  },
+  "optimizer": "AdamW",
+  "learning_rate": {
+    "stage1": 0.0003,
+    "stage2": 0.0001
+  },
+  "batch_size": 32,
+  "effective_batch_size": 32,
+  "accum_steps": 1,
+  "augmentation_config": {
+    "rotation_deg": 7.0,
+    "translate_frac": 0.05,
+    "scale_min": 0.95,
+    "scale_max": 1.05,
+    "brightness": 0.1,
+    "contrast": 0.1
+  },
+  "best_epoch": 1,
+  "best_val_auroc": 0.84375,
+  "stopping_epoch": 1,
+  "checkpoint_path": "D:\\Claude\\Pneumonia\\pneumonia_reliability_study\\experiments\\experiment_a\\_smoke\\checkpoints\\SMOKE__EXP_A__controlled__clean__efficientnet_b0__seed_42.best.pt",
+  "wall_clock_seconds": 15.1,
+  "smoke": true
+}

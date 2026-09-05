@@ -1,0 +1,25 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__clean__efficientnet_b0__seed_42",
+  "best_epoch": 1,
+  "val_loss": 2.2732250690460205,
+  "val_metrics": {
+    "auroc": 0.84375,
+    "auprc": 0.900974025974026,
+    "tp": 8,
+    "fp": 6,
+    "fn": 0,
+    "tn": 2,
+    "sensitivity": 1.0,
+    "specificity": 0.25,
+    "recall": 1.0,
+    "precision": 0.5714285714285714,
+    "ppv": 0.5714285714285714,
+    "npv": 1.0,
+    "accuracy": 0.625,
+    "balanced_accuracy": 0.625,
+    "f1": 0.7272727272727273,
+    "brier": 0.3786069452762604,
+    "nll": 2.273200511932373,
+    "ece": 0.3942168691428378
+  }
+}

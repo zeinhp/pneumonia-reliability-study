@@ -1,0 +1,25 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__clean__swin_tiny__seed_42",
+  "best_epoch": 1,
+  "val_loss": 0.644504189491272,
+  "val_metrics": {
+    "auroc": 0.953125,
+    "auprc": 0.9526289682539684,
+    "tp": 0,
+    "fp": 0,
+    "fn": 8,
+    "tn": 8,
+    "sensitivity": 0.0,
+    "specificity": 1.0,
+    "recall": 0.0,
+    "precision": NaN,
+    "ppv": NaN,
+    "npv": 0.5,
+    "accuracy": 0.5,
+    "balanced_accuracy": 0.5,
+    "f1": 0.0,
+    "brier": 0.22912856936454773,
+    "nll": 0.644504189491272,
+    "ece": 0.24596069660037756
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__leaky__densenet121__seed_42",
+  "best_epoch": 1,
+  "val_loss": 0.6848588585853577,
+  "val_metrics": {
+    "auroc": 0.671875,
+    "auprc": 0.6468906093906094,
+    "tp": 8,
+    "fp": 7,
+    "fn": 0,
+    "tn": 1,
+    "sensitivity": 1.0,
+    "specificity": 0.125,
+    "recall": 1.0,
+    "precision": 0.5333333333333333,
+    "ppv": 0.5333333333333333,
+    "npv": 1.0,
+    "accuracy": 0.5625,
+    "balanced_accuracy": 0.5625,
+    "f1": 0.6956521739130436,
+    "brier": 0.24447622895240784,
+    "nll": 0.6848589181900024,
+    "ece": 0.12207339890301228
+  }
+}

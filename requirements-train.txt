@@ -1,0 +1,73 @@
+# requirements-train.txt
+# ---------------------------------------------------------------------------
+# Dependency training untuk Eksperimen A (Pneumonia Reliability Study).
+# MELENGKAPI requirements.txt (yang hanya menutup Tahap 1: manifest & validasi).
+# Versi di-PIN (bukan >=) demi reproducibility, sesuai protokol bagian 19.4.
+#
+# CATATAN PENTING:
+#   - File ini adalah "intended versions". Lock file resmi (bukti Fase 2) tetap
+#     harus di-generate di mesin training kamu sendiri:  pip freeze > requirements-lock.txt
+#   - Build terpilih: cu121 -> torch 2.5.1 + torchvision 0.20.1 (versi maks di index cu121).
+#   - torch/torchvision di sini BELUM diverifikasi load di sandbox (proxy sandbox
+#     memblokir download.pytorch.org & wheel CUDA terlalu besar). Smoke test per
+#     arsitektur wajib dijalankan di environment kamu (protokol Fase 3).
+#
+# CARA INSTALL (jalankan di mesin training, di dalam venv/conda terpisah):
+#
+#   # 0. Masuk ke folder proyek DULU (jangan dari C:\WINDOWS\system32), lalu buat env
+#   cd D:\Claude\Pneumonia\pneumonia_reliability_study
+#   python -m venv venv-train
+#   .\venv-train\Scripts\Activate.ps1      # PowerShell (kalau diblokir execution policy:
+#                                          #   Set-ExecutionPolicy -Scope Process RemoteSigned)
+#
+#   # 1a. torch + torchvision -- BUILD TERPILIH: cu121 (CUDA 12.1).
+#   #     CATATAN: index cu121 hanya menyediakan torch s/d 2.5.1 -- inilah versi maksimal
+#   #     untuk CUDA 12.1. Kalau driver kamu mendukung CUDA >=12.4 dan mau torch lebih baru,
+#   #     ganti index ke cu124/cu126 dan sesuaikan versinya.
+#   pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
+#
+#   # 1b. (Alternatif) CPU-ONLY -- hanya untuk dev/smoke test, bukan training penuh:
+#   pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+#
+#   # 2. Sisa dependency (dari PyPI biasa):
+#   pip install -r requirements-train.txt
+#
+#   # 3. Bekukan lock file resmi:
+#   pip freeze > requirements-lock.txt
+# ---------------------------------------------------------------------------
+
+# Env target: Python 3.11 (cp311), torch 2.5.1+cu121. Versi di bawah pakai FLOOR (>=)
+# yang kompatibel dengan Python 3.11; versi persis reproducible dicatat di
+# requirements-lock.txt (hasil pip freeze). Jangan pakai scipy>=1.18 / paket lain yang
+# menuntut Python >=3.12 di env 3.11 ini.
+
+# --- Deep learning core (torch/torchvision di-install terpisah, lihat langkah 1) ---
+timm>=1.0.15            # sumber EfficientNet-B0 & Swin-Tiny; DenseNet121 juga tersedia
+Pillow>=10.0            # baca citra grayscale -> replikasi 3-channel (preprocessing bag. 8)
+
+# --- Eksperimen F saja (shortcut-learning audit) - TIDAK dipakai training Eksperimen A-E ---
+torchxrayvision>=1.5.2   # segmentasi paru pretrained (PSPNet/ChestX-Det) utk bangun lung mask
+
+# --- Statistik (Fase 7) ---
+scipy>=1.11,<1.18       # 1.18+ butuh Python 3.12; env ini Python 3.11
+statsmodels>=0.14       # McNemar (statsmodels.stats.contingency_tables.mcnemar) + Holm
+matplotlib>=3.8         # tabel & gambar
+
+# --- Utility ---
+tqdm>=4.66
+torchmetrics>=1.4       # metrik terstandarisasi (AUROC dsb.)
+
+# --- Sudah ada di requirements.txt Tahap 1, dipertahankan agar env training lengkap ---
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.2
+pyarrow>=14.0
+pytest>=7.4
+PyYAML>=6.0
+
+# ---------------------------------------------------------------------------
+# Nama model timm yang dipakai (untuk referensi saat menulis kode training):
+#   DenseNet121       -> timm.create_model('densenet121', pretrained=True, num_classes=1)
+#   EfficientNet-B0   -> timm.create_model('efficientnet_b0', pretrained=True, num_classes=1)
+#   Swin Transformer-T-> timm.create_model('swin_tiny_patch4_window7_224', pretrained=True, num_classes=1)
+# ---------------------------------------------------------------------------

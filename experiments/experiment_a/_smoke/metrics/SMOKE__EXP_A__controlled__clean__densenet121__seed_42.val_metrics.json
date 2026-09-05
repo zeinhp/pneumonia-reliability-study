@@ -1,0 +1,25 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__clean__densenet121__seed_42",
+  "best_epoch": 1,
+  "val_loss": 0.3240440972149372,
+  "val_metrics": {
+    "auroc": 0.966064453125,
+    "auprc": 0.9721413105583783,
+    "tp": 59,
+    "fp": 3,
+    "fn": 5,
+    "tn": 61,
+    "sensitivity": 0.921875,
+    "specificity": 0.953125,
+    "recall": 0.921875,
+    "precision": 0.9516129032258065,
+    "ppv": 0.9516129032258065,
+    "npv": 0.9242424242424242,
+    "accuracy": 0.9375,
+    "balanced_accuracy": 0.9375,
+    "f1": 0.9365079365079365,
+    "brier": 0.08671610057353973,
+    "nll": 0.3240440785884857,
+    "ece": 0.1667032225523144
+  }
+}

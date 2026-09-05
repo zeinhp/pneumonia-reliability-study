@@ -1,0 +1,52 @@
+# dataset_config.yaml
+# Describes the read-only source dataset used by this project.
+# Do NOT change data_root_windows, n_images, or n_patients unless the
+# underlying audit is formally re-run and re-frozen (see
+# data/reports/manifest_lineage.md).
+#
+# Path resolution (see src/project_config.py:get_dataset_root):
+#   1. Environment variable CHEST_XRAY_DATA_ROOT always wins, on any OS.
+#   2. On Windows, falls back to dataset.data_root_windows below.
+#   3. On POSIX, falls back to dataset.data_root below.
+#
+# dataset.data_root is intentionally left EMPTY. There is no portable POSIX
+# default - the dataset lives on a Windows drive whose mount point inside
+# any given POSIX environment (e.g. WSL, a sandbox, a CI runner) is not
+# predictable, so no ephemeral session path may be hardcoded here. On
+# POSIX you MUST export CHEST_XRAY_DATA_ROOT before running any script:
+#
+#   export CHEST_XRAY_DATA_ROOT="/path/to/chest_xray"
+#
+# On Windows, PowerShell:
+#
+#   $env:CHEST_XRAY_DATA_ROOT = "D:\Claude\Pneumonia\chest_xray\chest_xray"
+#
+# (setting the env var is optional on Windows since data_root_windows below
+# already points at the right place, but it always takes priority if set).
+
+dataset:
+  name: "Chest X-Ray Images (Pneumonia)"
+  source: "Kaggle - paultimothymooney/chest-xray-pneumonia"
+  data_root: ""
+  data_root_windows: "D:\\Claude\\Pneumonia\\chest_xray\\chest_xray"
+  read_only: true
+  n_images_total: 5856
+  n_patients_unique: 2790
+  n_corrupt: 0
+  classes: ["NORMAL", "PNEUMONIA"]
+  original_splits: ["train", "val", "test"]
+  audit_date: "2026-07-23"
+  audit_frozen_snapshot: "data/source_audit/"
+
+known_data_quality_findings:
+  n_exact_duplicate_files: 62
+  n_exact_duplicate_groups: 30
+  n_low_resolution_images: 111
+  n_low_resolution_threshold_px: 400
+  n_blur_candidates: 118
+  n_patients_overlapping_original_splits: 264
+
+rules:
+  - "Never rename, move, delete, or modify original image files."
+  - "Never recompute patient_id, md5, phash, or blur_variance unless a documented validation failure requires it."
+  - "Always reference images via relative_path in project manifests, never absolute paths."

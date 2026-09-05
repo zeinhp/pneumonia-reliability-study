@@ -1,0 +1,116 @@
+# train_config_a2_seed123.yaml
+# ---------------------------------------------------------------------------
+# Eksperimen A2 (varying-draw leakage replication, CLAUDE.md #6b poin 2).
+# IDENTIK train_config.yaml Eksperimen A di SETIAP hyperparameter, KECUALI
+# manifests.leaky.train yang mengarah ke varian leaky_train draw_seed=123
+# (dibangun src/build_controlled_manifests_a2.py, divalidasi PASS
+# src/validate_controlled_manifests_a2.py). Kondisi Clean, validation, dan
+# anchor test TIDAK berubah - identik Eksperimen A.
+#
+# Tujuan: satu-satunya variabel yang berbeda antar 5 seed adalah SEED
+# EXCLUSION/REPLACEMENT (protokol 6.5) - bukan cuma model init seed seperti
+# Eksperimen A asli (yang selalu pakai seed exclusion=42 utk semua 30 run).
+# Ini menutup limitasi single-draw yang dicatat di Laporan Eksperimen A.
+#
+# Semua hasil dari config ini EXPLORATORY (protokol §24) - anchor test sudah
+# terbuka sejak Fase 5 Eksperimen A. TIDAK mengubah kesimpulan confirmatory A.
+# ---------------------------------------------------------------------------
+protocol_version: "1.0"
+
+seeds:
+  main: [42, 123, 456, 789, 2026]      # analisis utama (30 run), tidak boleh dikurangi
+  secondary: [42, 456, 2026]           # benchmark sekunder minimal
+
+# --- Preprocessing (protokol 8) ---
+image:
+  size: 224
+  interpolation: bilinear
+  grayscale_to_rgb: true               # baca L, replikasi R=G=B (8.2)
+  square_pad: true                     # pad simetris ke persegi, BUKAN stretch (8.3)
+  pad_value: 0                         # hitam (sebelum normalisasi)
+  normalize_mean: [0.485, 0.456, 0.406]   # ImageNet (8.4)
+  normalize_std:  [0.229, 0.224, 0.225]
+
+# --- Augmentation training saja (protokol 9); val/test TANPA augmentation (8.5) ---
+augmentation:
+  rotation_deg: 7.0                    # maks +-7 derajat
+  translate_frac: 0.05                 # horizontal & vertikal maks 5%
+  scale_min: 0.95
+  scale_max: 1.05
+  brightness: 0.10                     # maks +-10%
+  contrast: 0.10                       # maks +-10%
+  # DINONAKTIFKAN eksplisit (9): horizontal/vertical flip, rotasi besar,
+  # elastic deformation, random erasing, CutMix, MixUp, crop agresif, GAN.
+
+# --- Loss (protokol 10) ---
+loss:
+  type: BCEWithLogitsLoss
+  class_weighting: false               # tanpa weighting/sampling di Eksperimen A
+
+# --- Strategi training (protokol 11) ---
+training:
+  stage1_head_epochs: 3                # 11.1 tahap 1: backbone beku, head saja
+  stage1_lr: 0.0003                    # 3e-4
+  stage2_max_epochs: 40                # 11.1 tahap 2: full fine-tuning, maks 40 epoch
+  stage2_lr: 0.0001                    # 1e-4 (LR awal tahap 2)
+  optimizer: AdamW                     # 11.2
+  weight_decay: 0.0001                 # 1e-4
+  betas: [0.9, 0.999]
+  batch_size: 32                       # 11.5 target
+  effective_batch_size: 32             # dijaga via gradient accumulation bila Swin-T OOM
+  grad_clip_max_norm: 1.0              # 11.7
+  amp: false                           # CLAUDE.md #4: TANPA AMP (Pascal FP16 buruk)
+
+# --- Scheduler (protokol 11.3) ---
+scheduler:
+  type: ReduceLROnPlateau
+  mode: max
+  monitor: val_auroc
+  factor: 0.5
+  patience: 3
+  min_lr: 0.000001                     # 1e-6
+
+# --- Early stopping (protokol 11.4) ---
+early_stopping:
+  monitor: val_auroc
+  mode: max
+  patience: 7
+  min_delta: 0.001
+  tie_breaker: val_loss                # AUROC seri -> pilih val_loss lebih rendah
+
+# --- Threshold (protokol 13.3) ---
+threshold:
+  primary: 0.5                         # wajib dilaporkan
+  youden_from_validation: true         # sekunder; dibekukan dari val sebelum test
+
+# --- Determinisme (CLAUDE.md #4) ---
+determinism:
+  use_deterministic_algorithms: true
+  cudnn_deterministic: true
+  cudnn_benchmark: false
+
+# --- DataLoader (CLAUDE.md #4: CPU 4-core, <=2 run paralel) ---
+dataloader:
+  num_workers: 2
+  pin_memory: true
+
+# --- Label encoding ---
+label:
+  positive_class: PNEUMONIA            # -> 1
+  negative_class: NORMAL               # -> 0
+
+# --- Arsitektur: kunci internal -> nama model timm (protokol; timm) ---
+architectures:
+  densenet121: densenet121
+  efficientnet_b0: efficientnet_b0
+  swin_tiny: swin_tiny_patch4_window7_224
+
+# --- Manifest per kondisi (Fase 1). Validation IDENTIK untuk clean & leaky. ---
+manifests:
+  clean:
+    train: controlled_clean_train.csv
+    validation: controlled_clean_validation.csv
+  leaky:
+    train: controlled_leaky_train_a2_seed123.csv
+    validation: controlled_clean_validation.csv
+  anchor_test: controlled_anchor_test.csv   # HANYA dibuka di Fase 5, JANGAN di training

@@ -1,0 +1,21 @@
+{
+  "run_id": "SMOKE__EXP_A__controlled__clean__swin_tiny__seed_42",
+  "history": [
+    {
+      "stage": 1,
+      "epoch": 1,
+      "train_loss": 0.7983559966087341,
+      "val_loss": 0.7406018972396851,
+      "val_auroc": 0.46875,
+      "lr": 0.0003
+    },
+    {
+      "stage": 2,
+      "epoch": 1,
+      "train_loss": 0.7851565480232239,
+      "val_loss": 0.644504189491272,
+      "val_auroc": 0.953125,
+      "lr": 0.0001
+    }
+  ]
+}

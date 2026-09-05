@@ -1,0 +1,122 @@
+{
+  "validated_at": "2026-07-24T13:00:34.952931",
+  "overall_status": "PASS",
+  "K_sibling_eligible_patients": 146,
+  "checks": [
+    {
+      "check": "anchor_exactly_one_image_per_patient",
+      "status": "PASS",
+      "detail": "n=279, duplicated patient_id rows=0"
+    },
+    {
+      "check": "anchor_test_not_leaked_into_any_train_or_validation",
+      "status": "PASS",
+      "detail": "clean_train=0 leaky_train=0 val=0"
+    },
+    {
+      "check": "validation_shared_identically_by_clean_and_leaky",
+      "status": "PASS",
+      "detail": "single controlled_clean_validation.csv is used unmodified for both conditions by design"
+    },
+    {
+      "check": "train_size_clean_equals_leaky",
+      "status": "PASS",
+      "detail": "clean=4607 leaky=4607"
+    },
+    {
+      "check": "class_distribution_train_comparable",
+      "status": "PASS",
+      "detail": "clean={'NORMAL': 1270, 'PNEUMONIA': 3337} leaky={'NORMAL': 1270, 'PNEUMONIA': 3337}"
+    },
+    {
+      "check": "no_repeated_md5__clean_train",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_repeated_md5__leaky_train",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_repeated_md5__anchor_test",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_repeated_md5__clean_validation",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_repeated_md5_across_train_val_test__clean",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_repeated_md5_across_train_val_test__leaky",
+      "status": "PASS",
+      "detail": "0 repeated md5"
+    },
+    {
+      "check": "no_path_overlap_train_test__clean",
+      "status": "PASS",
+      "detail": "0 overlapping paths"
+    },
+    {
+      "check": "no_path_overlap_train_test__leaky",
+      "status": "PASS",
+      "detail": "0 overlapping paths"
+    },
+    {
+      "check": "clean_condition_zero_patient_overlap",
+      "status": "PASS",
+      "detail": "train-val=0 train-test=0 val-test=0"
+    },
+    {
+      "check": "leaky_condition_patient_overlap_matches_contamination_map_exactly",
+      "status": "PASS",
+      "detail": "train-test overlap=146 (planned K=146, match=True); train-val=0; val-test=0"
+    },
+    {
+      "check": "all_siblings_originate_from_anchor_test_patients",
+      "status": "PASS",
+      "detail": "0 sibling patients NOT in anchor test"
+    },
+    {
+      "check": "replacement_images_not_from_validation_or_test_patients",
+      "status": "PASS",
+      "detail": "0 replaced patients found in validation/test"
+    },
+    {
+      "check": "replacement_max_one_image_per_training_patient",
+      "status": "PASS",
+      "detail": "0 training patients had >1 image replaced"
+    },
+    {
+      "check": "source_audit_checksums_unchanged",
+      "status": "PASS",
+      "detail": "mismatched files: []"
+    },
+    {
+      "check": "all_paths_exist__anchor_test",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "all_paths_exist__clean_train",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "all_paths_exist__clean_validation",
+      "status": "PASS",
+      "detail": "0 missing"
+    },
+    {
+      "check": "all_paths_exist__leaky_train",
+      "status": "PASS",
+      "detail": "0 missing"
+    }
+  ]
+}
