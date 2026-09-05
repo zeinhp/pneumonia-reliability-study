@@ -1,26 +1,26 @@
 """analyze_statistics.py
 
-Fase 7 (protokol bagian 15-16): analisis statistik confirmatory clean-vs-leaky
-pada common anchor test, memakai file prediksi Fase 5.
+Phase 7 (protocol section 15-16): confirmatory clean-vs-leaky statistical
+analysis on the common anchor test, using the Phase 5 prediction files.
 
-Keputusan agregasi seed (DIBEKUKAN, diputus user sebelum test dibuka -> tetap
-confirmatory): Opsi C - hitung per (arsitektur, seed), lalu gabung p-value 5 seed
-per arsitektur dengan metode Stouffer (signed-Z), baru Holm-Bonferroni lintas 3
-arsitektur.
+Seed-aggregation decision (FROZEN, decided by the user before the test set was
+opened -> stays confirmatory): Option C - compute per (architecture, seed),
+then combine the 5 per-seed p-values per architecture with the Stouffer
+method (signed-Z), then Holm-Bonferroni across the 3 architectures.
 
-Per (arsitektur, seed):
-  - paired patient-cluster bootstrap (n=2000, seed 42) untuk delta metrik
+Per (architecture, seed):
+  - paired patient-cluster bootstrap (n=2000, seed 42) for the metric deltas
     (AUROC, AUPRC, balanced_accuracy, sensitivity, specificity, Brier) -> mean,
     median, 95% CI, two-sided bootstrap p-value (16.1).
-  - McNemar pada threshold 0,5 (16.2).
-  - delta sensitivity/specificity TERPISAH per kelas PNEUMONIA vs NORMAL
-    (syarat keputusan beku #1 CLAUDE.md).
-Per arsitektur:
-  - Stouffer menggabung 5 p-value ΔAUROC (signed) -> 1 p-value.
-  - agregasi seed 16.6: mean±sd, median, min-max.
-Keluarga Holm: 3 p-value gabungan (satu per arsitektur).
+  - McNemar at threshold 0.5 (16.2).
+  - sensitivity/specificity deltas computed SEPARATELY per class PNEUMONIA vs
+    NORMAL (required by frozen decision #1 in CLAUDE.md).
+Per architecture:
+  - Stouffer combines the 5 ΔAUROC p-values (signed) -> 1 p-value.
+  - seed aggregation 16.6: mean±sd, median, min-max.
+Holm family: 3 combined p-values (one per architecture).
 
-Output ke experiments/experiment_a/statistics/.
+Output to experiments/experiment_a/statistics/.
 """
 from __future__ import annotations
 
@@ -135,7 +135,7 @@ def main():
 
     files = sorted(pred_dir.glob("EXP_A__controlled__*.anchor_predictions.csv"))
     if not files:
-        raise SystemExit(f"Tidak ada file prediksi di {pred_dir}. Jalankan Fase 5 dulu.")
+        raise SystemExit(f"No prediction files found in {pred_dir}. Run Phase 5 first.")
     df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
 
     per_run_rows, per_arch_rows = [], []
@@ -156,7 +156,7 @@ def main():
             res = paired_patient_bootstrap(y, pc, pl)
             mp, bcell, ccell = mcnemar_p(y, predc, predl)
 
-            # per-class sens/spec deltas (decision #1): PNEUMONIA=1 -> sens; NORMAL=0 -> spec
+            # per-class sens/spec deltas (decision #1): PNEUMONIA=1 -> sensitivity; NORMAL=0 -> specificity
             sensc, specc = _sens_spec(y, predc); sensl, specl = _sens_spec(y, predl)
 
             daur = res["AUROC"]["observed"]
@@ -199,15 +199,15 @@ def main():
     pd.DataFrame(per_run_rows).to_csv(out_dir / "clean_vs_leaky_per_run.csv", index=False)
     pa.to_csv(out_dir / "clean_vs_leaky_per_architecture.csv", index=False)
 
-    print("=== Fase 7: clean vs leaky (per arsitektur, Holm lintas 3) ===")
+    print("=== Phase 7: clean vs leaky (per architecture, Holm across 3) ===")
     for _, r in pa.iterrows():
         print(f"  {r['architecture']:16s} ΔAUROC={r['dAUROC_mean']:+.4f}±{r['dAUROC_sd']:.4f} "
               f"(median {r['dAUROC_median']:+.4f}, range [{r['dAUROC_min']:+.4f},{r['dAUROC_max']:+.4f}]) "
               f"Stouffer p={r['stouffer_p']:.4g} Holm p={r['holm_p']:.4g} "
               f"{'SIG' if r['significant_holm_0_05'] else 'ns'}")
     print(f"\nOutput: {out_dir}")
-    print("Ingat interpretasi beku (CLAUDE.md #3): headline = besar inflasi + CI, bukan p semata; "
-          "null result != 'tidak ada efek' (lihat MDES).")
+    print("Remember the frozen interpretation rule (CLAUDE.md #3): the headline is the size of "
+          "the inflation + CI, not the p-value alone; a null result != 'no effect' (see MDES).")
 
 
 if __name__ == "__main__":

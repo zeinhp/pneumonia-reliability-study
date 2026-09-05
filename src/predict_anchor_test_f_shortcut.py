@@ -1,62 +1,62 @@
 """predict_anchor_test_f_shortcut.py
 
-Eksperimen F (protokol §28): "shortcut-learning audit dengan lung masking".
-Protokol hanya menulis satu baris untuk F (tidak ada spesifikasi metode seperti
-B-E) - metode di bawah ini DIPUTUSKAN bersama user sebelum eksekusi (lihat
-CLAUDE.md §9 subbagian Eksperimen F untuk catatan keputusan lengkap):
+Experiment F (protocol §28): "shortcut-learning audit with lung masking".
+The protocol only writes one line for F (no method specification like B-E) -
+the method below was DECIDED together with the user before execution (see
+CLAUDE.md §9 Experiment F subsection for the full decision notes):
 
-  1. Region-masking ABLATION (bukti kuantitatif utama): blackout paru vs
-     blackout non-paru (bandingkan dengan clean), ukur AUROC/sensitivitas/
-     spesifisitas. Kalau model masih jauh di atas-chance saat PARU di-blackout
-     (hanya latar/tulang/marker terlihat), itu bukti kuat model memakai
-     shortcut di luar paru.
-  2. Grad-CAM overlap (bukti pendukung visual): IoU & persentase energi
-     saliency di dalam mask paru, dihitung pada citra ORIGINAL (tidak
-     dimasking) supaya mencerminkan perilaku model yang sesungguhnya dipakai
-     di Eksperimen A-E.
+  1. Region-masking ABLATION (main quantitative evidence): blackout lung vs
+     blackout non-lung (compared with clean), measure AUROC/sensitivity/
+     specificity. If the model is still far above chance when the LUNGS are
+     blacked out (only background/bones/markers visible), that is strong
+     evidence the model is using a shortcut outside the lungs.
+  2. Grad-CAM overlap (supporting visual evidence): IoU & percentage of
+     saliency energy inside the lung mask, computed on the ORIGINAL
+     (unmasked) images so it reflects the model's actual behavior as used in
+     Experiments A-E.
 
-INFERENSI SAJA, tanpa training baru. Anchor test sudah terbuka sejak Fase 5
-Eksperimen A -> hasil skrip ini EXPLORATORY (protokol §24), tidak mengubah
-kesimpulan confirmatory A. Memakai 15 checkpoint CLEAN Eksperimen A (3
-arsitektur x 5 seed) - checkpoint 'leaky' TIDAK dipakai (konsisten dgn pola
-B/D/E).
+INFERENCE ONLY, no new training. The anchor test has been open since
+Experiment A Phase 5 -> this script's results are EXPLORATORY (protocol
+§24), they do not change the Experiment A confirmatory conclusions. Uses the
+15 CLEAN Experiment A checkpoints (3 architectures x 5 seeds) - the 'leaky'
+checkpoints are NOT used (consistent with the B/D/E pattern).
 
-SUMBER MASK PARU: dataset Kermany TIDAK punya ground-truth segmentasi. Dipakai
-model eksternal pretrained `torchxrayvision` - `PSPNet` terlatih di
-ChestX-Det (14 struktur anatomis, dipakai channel 4 = Left Lung & 5 = Right
-Lung). Bukan bagian dari pipeline training Eksperimen A; hanya dipakai untuk
-membangun mask evaluasi audit F.
+LUNG MASK SOURCE: the Kermany dataset has NO ground-truth segmentation. An
+external pretrained model, `torchxrayvision` - `PSPNet` trained on
+ChestX-Det (14 anatomical structures, channels 4 = Left Lung & 5 = Right
+Lung are used), is used instead. It is not part of the Experiment A training
+pipeline; it is only used to build the evaluation masks for the F audit.
 
-    pip install torchxrayvision   # sekali; download weight PSPNet otomatis
-                                    # (~90MB, dari github release torchxrayvision)
+    pip install torchxrayvision   # once; downloads the PSPNet weights automatically
+                                    # (~90MB, from the torchxrayvision github release)
 
-ALIGNMENT: mask paru dihitung pada CANVAS 224x224 YANG SAMA PERSIS dengan yang
-dilihat classifier (grayscale -> square-pad -> resize 224, titik preprocessing
-identik dgn training.data.build_transforms), supaya piksel mask & piksel input
-model berkorespondensi 1:1. PSPNet dipanggil pada canvas ini (ia me-resize
-sendiri ke 512 secara internal), output 512x512x14 di-downsize NEAREST balik
-ke 224x224.
+ALIGNMENT: the lung mask is computed on the EXACT SAME 224x224 CANVAS seen by
+the classifier (grayscale -> square-pad -> resize 224, a preprocessing point
+identical to training.data.build_transforms), so mask pixels and model input
+pixels correspond 1:1. PSPNet is called on this canvas (it resizes internally
+to 512 on its own), and the 512x512x14 output is downsized with NEAREST
+interpolation back to 224x224.
 
-Jalankan bertahap di lingkungan yang punya 15 checkpoint clean EXP_A (Hub). Lokasi kerja di Hub
-ada di `$HOME/Pneumonia_research/`:
+Run in stages, in an environment with the 15 clean EXP_A checkpoints (Hub).
+The working location on Hub is `$HOME/Pneumonia_research/`:
 
     cd $HOME/Pneumonia_research/pneumonia_reliability_study
     source $HOME/Pneumonia_research/venv-train/bin/activate
     export CHEST_XRAY_DATA_ROOT=$HOME/Pneumonia_research/chest_xray/chest_xray
     pip install torchxrayvision
-    python src/predict_anchor_test_f_shortcut.py --stage masks       # sekali, ~279 citra
-    python src/predict_anchor_test_f_shortcut.py --stage ablation    # 15 ckpt x 3 kondisi
-    python src/predict_anchor_test_f_shortcut.py --stage gradcam     # 15 ckpt x 279 citra
-    # atau semua sekaligus:
+    python src/predict_anchor_test_f_shortcut.py --stage masks       # once, ~279 images
+    python src/predict_anchor_test_f_shortcut.py --stage ablation    # 15 ckpt x 3 conditions
+    python src/predict_anchor_test_f_shortcut.py --stage gradcam     # 15 ckpt x 279 images
+    # or all at once:
     python src/predict_anchor_test_f_shortcut.py --stage all
 
-Output (di experiments/experiment_f/):
-    masks/lung_masks.npz              - mask paru (279, 224, 224) bool, keyed by image_id order
-    masks/lung_coverage_qc.csv        - QC: %area paru per citra (deteksi mask gagal/aneh)
-    metrics/exp_f_ablation_metrics.csv       - 45 baris = 15 ckpt x {clean,lung_blackout,nonlung_blackout}
-    predictions/*.anchor_predictions.csv     - prediksi per-run per-kondisi (format sama Exp A/E)
-    metrics/exp_f_gradcam_overlap.csv        - 15 baris = 15 ckpt, IoU & %energi Grad-CAM dlm mask paru
-    gradcam/{run_id}_mean_cam.npy            - CAM rata-rata (224,224) per checkpoint, utk figure
+Output (under experiments/experiment_f/):
+    masks/lung_masks.npz              - lung masks (279, 224, 224) bool, keyed by image_id order
+    masks/lung_coverage_qc.csv        - QC: %lung area per image (detects failed/odd masks)
+    metrics/exp_f_ablation_metrics.csv       - 45 rows = 15 ckpt x {clean,lung_blackout,nonlung_blackout}
+    predictions/*.anchor_predictions.csv     - per-run per-condition predictions (same format as Exp A/E)
+    metrics/exp_f_gradcam_overlap.csv        - 15 rows = 15 ckpt, Grad-CAM IoU & %energy within the lung mask
+    gradcam/{run_id}_mean_cam.npy            - mean CAM (224,224) per checkpoint, for figures
 """
 from __future__ import annotations
 
@@ -85,7 +85,7 @@ CAM_TOP_FRACTION = 0.25  # top-25% saliency mass -> "attended region" for IoU
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Eksperimen F: shortcut-learning audit (lung masking).")
+    p = argparse.ArgumentParser(description="Experiment F: shortcut-learning audit (lung masking).")
     p.add_argument("--stage", choices=["masks", "ablation", "gradcam", "all"], default="all")
     p.add_argument("--device", default="cuda")
     return p.parse_args()
@@ -117,8 +117,8 @@ def clean_checkpoints(ckpt_dir: Path) -> list[Path]:
     )
     if len(ckpts) < 15:
         raise SystemExit(
-            f"Ditemukan {len(ckpts)} checkpoint clean (butuh 15 = 3 arsitektur x 5 seed). "
-            "Jalankan di lingkungan yang punya checkpoint Eksperimen A lengkap (Hub)."
+            f"Found {len(ckpts)} clean checkpoints (need 15 = 3 architectures x 5 seeds). "
+            "Run in an environment with the full Experiment A checkpoints (Hub)."
         )
     return ckpts
 
@@ -154,7 +154,7 @@ def stage_masks(conf: dict, dirs: dict):
     from training.data import load_manifest
 
     print("=" * 70)
-    print("EKSPERIMEN F - stage 'masks': segmentasi paru (torchxrayvision PSPNet)")
+    print("EXPERIMENT F - stage 'masks': lung segmentation (torchxrayvision PSPNet)")
     print("=" * 70)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -194,7 +194,7 @@ def stage_masks(conf: dict, dirs: dict):
             "label": row["label"], "lung_coverage_pct": coverage_pct,
         })
         if (i + 1) % 50 == 0 or (i + 1) == len(anchor_df):
-            print(f"  {i + 1}/{len(anchor_df)} mask selesai")
+            print(f"  {i + 1}/{len(anchor_df)} masks done")
 
     np.savez_compressed(
         dirs["masks"] / "lung_masks.npz",
@@ -206,15 +206,15 @@ def stage_masks(conf: dict, dirs: dict):
     qc.to_csv(qc_path, index=False)
 
     print("-" * 70)
-    print(f"Mask tersimpan: {dirs['masks'] / 'lung_masks.npz'} ({len(anchor_df)} citra)")
+    print(f"Masks saved: {dirs['masks'] / 'lung_masks.npz'} ({len(anchor_df)} images)")
     print(f"QC coverage: mean={qc['lung_coverage_pct'].mean():.1f}%  "
           f"min={qc['lung_coverage_pct'].min():.1f}%  max={qc['lung_coverage_pct'].max():.1f}%")
     n_bad = ((qc["lung_coverage_pct"] < 5) | (qc["lung_coverage_pct"] > 70)).sum()
     if n_bad:
-        print(f"  PERINGATAN: {n_bad} citra dengan coverage di luar rentang wajar (<5% atau >70%) - "
-              f"cek {qc_path}, kemungkinan segmentasi gagal untuk citra tsb (mis. kualitas/posisi ekstrem).")
+        print(f"  WARNING: {n_bad} images with coverage outside the plausible range (<5% or >70%) - "
+              f"check {qc_path}, segmentation likely failed for these images (e.g. extreme quality/positioning).")
     else:
-        print("  QC OK: semua citra dalam rentang coverage wajar (5-70%).")
+        print("  QC OK: all images within the plausible coverage range (5-70%).")
 
 
 def load_lung_masks(dirs: dict):
@@ -295,8 +295,8 @@ def stage_ablation(conf: dict, dirs: dict):
     from training.data import load_manifest
 
     print("=" * 70)
-    print("EKSPERIMEN F - stage 'ablation': lung_blackout vs nonlung_blackout vs clean")
-    print("EXPLORATORY (anchor test sudah terbuka sejak Fase 5 Eksperimen A).")
+    print("EXPERIMENT F - stage 'ablation': lung_blackout vs nonlung_blackout vs clean")
+    print("EXPLORATORY (the anchor test has been open since Experiment A Phase 5).")
     print("=" * 70)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -324,7 +324,7 @@ def stage_ablation(conf: dict, dirs: dict):
     for ckpt_path in ckpts:
         m = CKPT_RE.match(ckpt_path.name)
         if not m:
-            print(f"  [skip] nama checkpoint tak dikenal: {ckpt_path.name}")
+            print(f"  [skip] unrecognized checkpoint name: {ckpt_path.name}")
             continue
         arch, seed = m["arch"], int(m["seed"])
         run_id = ckpt_path.name[: -len(".best.pt")]
@@ -373,7 +373,7 @@ def stage_ablation(conf: dict, dirs: dict):
     out.to_csv(out_path, index=False)
     print("-" * 70)
     print(f"anchor_manifest_sha256: {anchor_sha}")
-    print(f"Metrik ablation: {out_path} ({len(out)} baris = 15 checkpoint x 3 kondisi)")
+    print(f"Ablation metrics: {out_path} ({len(out)} rows = 15 checkpoints x 3 conditions)")
 
 
 # ---------------------------------------------------------------------------
@@ -428,8 +428,8 @@ def stage_gradcam(conf: dict, dirs: dict):
     from training.data import load_manifest
 
     print("=" * 70)
-    print("EKSPERIMEN F - stage 'gradcam': saliency overlap dengan mask paru")
-    print("EXPLORATORY (anchor test sudah terbuka sejak Fase 5 Eksperimen A).")
+    print("EXPERIMENT F - stage 'gradcam': saliency overlap with the lung mask")
+    print("EXPLORATORY (the anchor test has been open since Experiment A Phase 5).")
     print("=" * 70)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -521,8 +521,8 @@ def stage_gradcam(conf: dict, dirs: dict):
     out_path = dirs["metrics"] / "exp_f_gradcam_overlap.csv"
     out.to_csv(out_path, index=False)
     print("-" * 70)
-    print(f"Grad-CAM overlap: {out_path} ({len(out)} baris = 15 checkpoint)")
-    print(f"Mean-CAM per checkpoint: {dirs['gradcam']}/*_mean_cam.npy (utk figure)")
+    print(f"Grad-CAM overlap: {out_path} ({len(out)} rows = 15 checkpoints)")
+    print(f"Mean-CAM per checkpoint: {dirs['gradcam']}/*_mean_cam.npy (for figures)")
 
 
 def main():
@@ -538,7 +538,7 @@ def main():
         stage_gradcam(conf, dirs)
 
     print("=" * 70)
-    print("Eksperimen F stage(s) selesai.")
+    print("Experiment F stage(s) done.")
 
 
 if __name__ == "__main__":

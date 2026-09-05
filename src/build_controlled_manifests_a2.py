@@ -1,36 +1,39 @@
 """
 build_controlled_manifests_a2.py
 
-Eksperimen A2 (varying-draw leakage replication, CLAUDE.md #6b poin 2):
-membangun 5 varian manifest `leaky_train` yang berbeda dalam HAL SATU variabel
-saja - seed yang dipakai untuk memilih citra clean-train mana yang DIKELUARKAN
-untuk mengimbangi ukuran/kelas saat sibling disisipkan (protokol 6.5). Di
-Eksperimen A asli, seed exclusion ini SELALU 42 untuk seluruh 30 run (2 kondisi
-x 3 arsitektur x 5 model-seed) - satu "draw" tetap. Limitasi ini dicatat di
-Laporan Eksperimen A (CI efek-leakage tidak menangkap ketidakpastian pola
-kontaminasi, cuma noise training).
+Experiment A2 (varying-draw leakage replication, CLAUDE.md #6b point 2):
+builds 5 variants of the `leaky_train` manifest that differ in exactly ONE
+variable - the seed used to choose which clean-train images are EXCLUDED to
+offset size/class balance when the sibling is inserted (protocol 6.5). In the
+original Experiment A, this exclusion seed was ALWAYS 42 across all 30 runs
+(2 conditions x 3 architectures x 5 model-seeds) - a single fixed "draw".
+This limitation was noted in the Experiment A report (the leakage-effect CI
+does not capture uncertainty in the contamination pattern, only training
+noise).
 
-A2 memvariasikan seed exclusion SELARAS dengan 5 model-seed yang sudah ada
-(draw_seed = model_seed): 42, 123, 456, 789, 2026. Sibling yang disisipkan ke
-leaky (K=146 pasien, 1 sibling/pasien, dipilih citra pertama setelah anchor
-secara leksikografis - protokol 6.3) TIDAK berubah - itu tetap deterministik
-per pasien, sesuai keputusan user (hanya seed exclusion/replacement yang
-divariasikan, bukan pemilihan sibling).
+A2 varies the exclusion seed IN LOCKSTEP with the existing 5 model-seeds
+(draw_seed = model_seed): 42, 123, 456, 789, 2026. The sibling inserted into
+leaky (K=146 patients, 1 sibling/patient, chosen as the lexicographically
+first image after the anchor - protocol 6.3) does NOT change - it stays
+deterministic per patient, per the user's decision (only the
+exclusion/replacement seed is varied, not the sibling selection).
 
-Kondisi Clean, validation, dan anchor test TIDAK berubah sama sekali - persis
-sama dengan Eksperimen A (dibaca ulang dari controlled_clean_train.csv,
-controlled_clean_validation.csv, controlled_anchor_test.csv yang sudah ada).
-Hanya leaky_train yang punya 5 varian.
+The Clean, validation, and anchor test conditions do NOT change at all -
+identical to Experiment A (re-read from the existing
+controlled_clean_train.csv, controlled_clean_validation.csv,
+controlled_anchor_test.csv). Only leaky_train has 5 variants.
 
-Sanity check penting: varian draw_seed=42 HARUS identik dengan
-controlled_leaky_train.csv (manifest asli Eksperimen A) - kalau tidak, ada bug.
+Important sanity check: the draw_seed=42 variant MUST be identical to
+controlled_leaky_train.csv (the original Experiment A manifest) - otherwise
+there is a bug.
 
-Status: EXPLORATORY (protokol §24) - anchor test sudah terbuka sejak Fase 5
-Eksperimen A. Analisis ini TIDAK mengubah kesimpulan confirmatory A, menguji
-limitasi single-draw yang tercatat di Laporan A.
+Status: EXPLORATORY (protocol §24) - the anchor test has been open since
+Experiment A Phase 5. This analysis does NOT change the Experiment A
+confirmatory conclusions; it tests the single-draw limitation noted in the
+Experiment A report.
 
 Output (data/manifests/):
-    controlled_leaky_train_a2_seed{S}.csv        untuk S in [42,123,456,789,2026]
+    controlled_leaky_train_a2_seed{S}.csv        for S in [42,123,456,789,2026]
     controlled_leakage_replacement_map_a2_seed{S}.csv
 """
 import sys
@@ -49,17 +52,17 @@ DRAW_SEEDS = [42, 123, 456, 789, 2026]
 COHORT_LABEL = "global_exact_deduplicated_5824"
 
 # ---------------------------------------------------------------------------
-# Muat ulang komponen yang TIDAK berubah antar-draw (persis Eksperimen A)
+# Reload the components that do NOT change across draws (identical to Experiment A)
 # ---------------------------------------------------------------------------
 clean_train_df = pd.read_csv(MANIFESTS / "controlled_clean_train.csv")
 clean_val_df = pd.read_csv(MANIFESTS / "controlled_clean_validation.csv")
 anchor_df = pd.read_csv(MANIFESTS / "controlled_anchor_test.csv")
 
-assert len(clean_train_df) == 4607, f"clean_train harus 4607, dapat {len(clean_train_df)}"
-assert len(clean_val_df) == 603, f"clean_val harus 603, dapat {len(clean_val_df)}"
+assert len(clean_train_df) == 4607, f"clean_train must be 4607, got {len(clean_train_df)}"
+assert len(clean_val_df) == 603, f"clean_val must be 603, got {len(clean_val_df)}"
 assert len(anchor_df) == 279 and anchor_df["patient_id"].nunique() == 279
 
-# rekonstruksi sibling_df persis logic protokol 6.3 dari test_df asli (dedup cohort)
+# reconstruct sibling_df using exactly the protocol 6.3 logic from the original test_df (dedup cohort)
 grouped = pd.read_csv(MANIFESTS / "patient_grouped_split_deduplicated.csv")
 assert len(grouped) == 5824
 test_df = grouped[grouped["experimental_split"] == "test"].copy()
@@ -173,7 +176,7 @@ def build_draw(draw_seed: int):
     return leaky_train_df, replacement_map_df, excluded_relpaths
 
 
-print(f"[A2] Membangun {len(DRAW_SEEDS)} varian leaky_train (draw_seed = model_seed)")
+print(f"[A2] Building {len(DRAW_SEEDS)} leaky_train variants (draw_seed = model_seed)")
 print(f"     K={K} sibling-eligible patients, class dist sibling={sib_counts_by_class}")
 
 all_excluded = {}
@@ -193,35 +196,35 @@ for seed in DRAW_SEEDS:
           f"replacement_map={len(repl_df)} rows -> {repl_path.name}")
 
 # ---------------------------------------------------------------------------
-# Sanity: draw_seed=42 harus identik dgn controlled_leaky_train.csv asli (Eksp A)
+# Sanity: draw_seed=42 must be identical to the original controlled_leaky_train.csv (Exp A)
 # ---------------------------------------------------------------------------
 orig_leaky = pd.read_csv(MANIFESTS / "controlled_leaky_train.csv")
 a2_seed42 = pd.read_csv(MANIFESTS / "controlled_leaky_train_a2_seed42.csv")
 orig_relpaths = set(orig_leaky["relative_path"])
 a2_relpaths = set(a2_seed42["relative_path"])
 identical = orig_relpaths == a2_relpaths
-print(f"\n[sanity] draw_seed=42 vs controlled_leaky_train.csv (Eksperimen A asli): "
-      f"{'IDENTIK' if identical else 'BEDA -- CEK ULANG!'} "
-      f"({len(orig_relpaths)} vs {len(a2_relpaths)} relative_path unik, "
+print(f"\n[sanity] draw_seed=42 vs controlled_leaky_train.csv (original Experiment A): "
+      f"{'IDENTICAL' if identical else 'DIFFERENT -- RECHECK!'} "
+      f"({len(orig_relpaths)} vs {len(a2_relpaths)} unique relative_path, "
       f"symmetric_diff={len(orig_relpaths ^ a2_relpaths)})")
-assert identical, "FATAL: draw_seed=42 variant HARUS identik dengan manifest Eksperimen A asli"
+assert identical, "FATAL: draw_seed=42 variant MUST be identical to the original Experiment A manifest"
 
 # ---------------------------------------------------------------------------
-# Sanity: kelima draw benar-benar berbeda satu sama lain (bukan degenerate)
+# Sanity: all five draws are genuinely different from each other (not degenerate)
 # ---------------------------------------------------------------------------
-print("\n[sanity] Perbedaan pairwise antar draw (jumlah relative_path exclusion yang beda):")
+print("\n[sanity] Pairwise differences between draws (number of differing exclusion relative_paths):")
 seeds = list(all_excluded.keys())
 any_identical_pair = False
 for i in range(len(seeds)):
     for j in range(i + 1, len(seeds)):
         s1, s2 = seeds[i], seeds[j]
         diff = all_excluded[s1] ^ all_excluded[s2]
-        print(f"  seed {s1} vs seed {s2}: {len(diff)} dari {K} exclusion berbeda")
+        print(f"  seed {s1} vs seed {s2}: {len(diff)} of {K} exclusions differ")
         if len(diff) == 0:
             any_identical_pair = True
 if any_identical_pair:
-    print("  [WARNING] ada pasangan draw yang exclusion-nya identik persis - cek RNG/seed.")
+    print("  [WARNING] some pair of draws has exactly identical exclusions - check RNG/seed.")
 else:
-    print("  OK - semua 5 draw menghasilkan pola exclusion yang berbeda satu sama lain.")
+    print("  OK - all 5 draws produce mutually different exclusion patterns.")
 
-print("\n[A2] Selesai. 5 varian leaky_train + replacement map ditulis ke data/manifests/.")
+print("\n[A2] Done. 5 leaky_train variants + replacement maps written to data/manifests/.")

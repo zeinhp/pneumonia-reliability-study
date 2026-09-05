@@ -1,15 +1,16 @@
 """
 validate_controlled_manifests_a2.py
 
-QC gate untuk Eksperimen A2 (varying-draw leakage replication). Analog
-validate_controlled_manifests.py Eksperimen A, dijalankan terhadap KELIMA
-varian leaky_train (draw_seed 42/123/456/789/2026), plus pemeriksaan tambahan
-khusus A2: kelima varian harus punya clean/anchor/validation yang identik
-(cuma leaky yang beda), draw_seed=42 harus identik manifest Eksperimen A asli,
-dan replacement count per kelas harus benar di semua draw.
+QC gate for Experiment A2 (varying-draw leakage replication). Analogous to
+Experiment A's validate_controlled_manifests.py, run against all FIVE
+leaky_train variants (draw_seed 42/123/456/789/2026), plus additional checks
+specific to A2: all five variants must have identical clean/anchor/validation
+(only leaky differs), draw_seed=42 must be identical to the original
+Experiment A manifest, and the per-class replacement count must be correct
+across all draws.
 
-Semua check di sini CORE - kegagalan apapun membuat proses exit non-zero.
-Read-only terhadap dataset/manifest sumber.
+All checks here are CORE - any failure makes the process exit non-zero.
+Read-only with respect to the source dataset/manifests.
 
 Writes: data/reports/a2_manifest_validation_report.json
 """
@@ -59,14 +60,14 @@ for seed in DRAW_SEEDS:
     leaky_by_seed[seed] = pd.read_csv(MANIFESTS / f"controlled_leaky_train_a2_seed{seed}.csv")
     repl_by_seed[seed] = pd.read_csv(MANIFESTS / f"controlled_leakage_replacement_map_a2_seed{seed}.csv")
 
-# 0. draw_seed=42 harus identik dgn manifest Eksperimen A asli (sanity anchor point)
+# 0. draw_seed=42 must be identical to the original Experiment A manifest (sanity anchor point)
 seed42_paths = set(leaky_by_seed[42]["relative_path"])
 orig_paths = set(orig_leaky["relative_path"])
 check("draw_seed42_identical_to_original_experiment_a_leaky_train",
       seed42_paths == orig_paths,
       f"symmetric_diff={len(seed42_paths ^ orig_paths)}")
 
-# per-seed checks (analog Eksperimen A, per varian)
+# per-seed checks (analogous to Experiment A, per variant)
 for seed in DRAW_SEEDS:
     leaky_train = leaky_by_seed[seed]
     repl_map = repl_by_seed[seed]
@@ -122,17 +123,17 @@ for seed in DRAW_SEEDS:
     check(f"replacement_map_selection_seed_matches_draw__{tag}", all_seeds_used == {seed},
           f"selection_seed values found: {all_seeds_used}")
 
-# cross-draw: clean/anchor/validation harus benar-benar identik di semua draw (given -
-# mereka dibaca dari file yang sama, tapi verifikasi eksplisit tidak ada file per-seed
-# yang salah nyasar / ter-generate keliru)
+# cross-draw: clean/anchor/validation must be genuinely identical across all draws
+# (given - they are read from the same file, but explicitly verify no per-seed file
+# has accidentally drifted / been generated incorrectly)
 anchor_hash = hashlib.sha256(pd.util.hash_pandas_object(anchor, index=False).values).hexdigest()
 clean_train_hash = hashlib.sha256(pd.util.hash_pandas_object(clean_train, index=False).values).hexdigest()
 clean_val_hash = hashlib.sha256(pd.util.hash_pandas_object(clean_val, index=False).values).hexdigest()
 check("single_shared_anchor_clean_train_val_files_used_by_all_draws", True,
       f"anchor_hash={anchor_hash[:12]} clean_train_hash={clean_train_hash[:12]} "
-      f"clean_val_hash={clean_val_hash[:12]} (satu file dipakai bersama by construction)")
+      f"clean_val_hash={clean_val_hash[:12]} (one shared file used by all draws by construction)")
 
-# cross-draw: kelima varian benar-benar berbeda satu sama lain (bukan degenerate/bug RNG)
+# cross-draw: all five variants are genuinely different from each other (not degenerate/RNG bug)
 identical_pairs = []
 for i in range(len(DRAW_SEEDS)):
     for j in range(i + 1, len(DRAW_SEEDS)):
@@ -142,9 +143,9 @@ for i in range(len(DRAW_SEEDS)):
         if p1 == p2:
             identical_pairs.append((s1, s2))
 check("all_five_draws_mutually_distinct", len(identical_pairs) == 0,
-      f"pasangan draw identik: {identical_pairs}" if identical_pairs else "semua 5 draw berbeda satu sama lain")
+      f"identical draw pairs: {identical_pairs}" if identical_pairs else "all 5 draws are mutually distinct")
 
-# source checksum tidak berubah
+# source checksums have not changed
 sha_df = pd.read_csv(CHECKSUMS / "source_audit_sha256.csv")
 mismatches = []
 for _, r in sha_df.iterrows():

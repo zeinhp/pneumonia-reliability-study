@@ -1,31 +1,33 @@
 """
 build_controlled_manifests_sensitivity_dedup.py
 
-Sensitivity-dedup (protokol bagian 28, "Eksperimen B" versi protokol asli -
-BUKAN "Eksperimen B" project ini yang dipakai untuk robustness/E). Tujuan:
-menguji apakah kesimpulan leakage Eksperimen A (patient-grouped clean vs
-leaky) robust terhadap keputusan deduplikasi Tahap 1 (32 citra exact-duplicate
-yang dikeluarkan dari cohort utama 5.824 -> cohort penuh 5.856).
+Sensitivity-dedup (protocol section 28, the "Experiment B" of the original
+protocol version - NOT this project's "Experiment B" used for robustness/E).
+Purpose: test whether the Experiment A leakage conclusion (patient-grouped
+clean vs leaky) is robust to the Stage 1 deduplication decision (32
+exact-duplicate images removed from the main cohort, 5,824 -> full cohort
+5,856).
 
-Mengikuti struktur & logika build_controlled_manifests.py (Fase 1, protokol
-6.2-6.6) SECARA IDENTIK, tapi bersumber dari
-`patient_grouped_split_all_images.csv` (5.856 citra, split patient-grouped
-BEKU yang sama - proposed_split_mapping.csv, seed 42 - sudah disiapkan di
-Tahap 1 justru untuk keperluan sensitivity-dedup ini). TIDAK menjalankan
-ulang StratifiedGroupKFold, TIDAK menghitung ulang patient_id/MD5.
+Follows the structure & logic of build_controlled_manifests.py (Phase 1,
+protocol 6.2-6.6) IDENTICALLY, but sources from
+`patient_grouped_split_all_images.csv` (5,856 images, the same FROZEN
+patient-grouped split - proposed_split_mapping.csv, seed 42 - already
+prepared in Stage 1 specifically for this sensitivity-dedup purpose). Does
+NOT re-run StratifiedGroupKFold, does NOT recompute patient_id/MD5.
 
-Temuan penting (didokumentasikan, DISENGAJA dibiarkan - keputusan user
-2026-08-02): satu pasang exact-duplicate (NORMAL2-IM-0095-0001.jpeg /
-NORMAL2-IM-0096-0001.jpeg, MD5 identik) diberi patient_id BERBEDA di sumber
-data (IM-0095 di test, IM-0096 di train) - inilah temuan asli yang melatari
-keputusan dedup Tahap 1. Cohort non-dedup di sini SENGAJA menyertakannya apa
-adanya (bukan cuma patient-level leakage yang sengaja divariasikan seperti
-Kondisi Leaky, tapi image-level MD5 collision train-test yang nyata) supaya
-sensitivity check ini menjawab pertanyaan yang sesungguhnya: apakah 1 leak
-nyata dari 5.856 citra ini cukup mengubah kesimpulan Eksperimen A. Lihat
-validate_controlled_manifests_sensitivity_dedup.py untuk allowlist eksplisit
-1 MD5 collision yang diharapkan ini (dan HANYA ini) - QC gate tetap FAIL untuk
-kolisi MD5 lain yang tak terduga.
+Important finding (documented, DELIBERATELY left in place - user decision
+2026-08-02): one exact-duplicate pair (NORMAL2-IM-0095-0001.jpeg /
+NORMAL2-IM-0096-0001.jpeg, identical MD5) was assigned DIFFERENT patient_ids
+in the source data (IM-0095 in test, IM-0096 in train) - this is the
+original finding that motivated the Stage 1 dedup decision. The non-dedup
+cohort here DELIBERATELY includes it as-is (not just the patient-level
+leakage intentionally varied as in the Leaky condition, but a real
+image-level MD5 collision between train and test) so this sensitivity check
+answers the real question: whether this one real leak out of 5,856 images is
+enough to change the Experiment A conclusion. See
+validate_controlled_manifests_sensitivity_dedup.py for the explicit allowlist
+of this one expected MD5 collision (and ONLY this one) - the QC gate still
+FAILs on any other unexpected MD5 collision.
 
 Output (data/manifests/):
     controlled_anchor_test_nondedup.csv
@@ -59,19 +61,19 @@ train_df = grouped[grouped["experimental_split"] == "train"].copy()
 val_df = grouped[grouped["experimental_split"] == "validation"].copy()
 
 assert test_df["patient_id"].nunique() == 279, (
-    f"FATAL: expected 279 test patients (identik dgn cohort dedup - split patient-grouped "
-    f"tidak berubah, hanya citra tambahan per pasien yg sudah ada), got {test_df['patient_id'].nunique()}"
+    f"FATAL: expected 279 test patients (identical to the dedup cohort - the patient-grouped "
+    f"split does not change, only additional images for existing patients), got {test_df['patient_id'].nunique()}"
 )
 print(f"[cohort] rows total={len(grouped)} train={len(train_df)} validation={len(val_df)} "
       f"test={len(test_df)} test_patients={test_df['patient_id'].nunique()}")
 
 # ===========================================================================
-# 6.2 Common anchor test set: 1 citra/pasien, leksikografis pertama
-#     (logika IDENTIK dgn Fase 1 - tidak diregenerasi ulang secara independen,
-#     supaya anchor test tetap SAMA 279 pasien; komposisi citra per pasien bisa
-#     bertambah krn cohort lebih besar, jadi anchor image utk sebagian pasien
-#     BISA berbeda dari cohort dedup kalau ada citra baru yg lbh awal
-#     leksikografis - didokumentasikan eksplisit di bawah, bukan disembunyikan)
+# 6.2 Common anchor test set: 1 image/patient, lexicographically first
+#     (logic IDENTICAL to Phase 1 - not independently regenerated, so the
+#     anchor test stays the SAME 279 patients; the per-patient image
+#     composition can grow since the cohort is larger, so the anchor image
+#     for some patients CAN differ from the dedup cohort if a new image sorts
+#     earlier lexicographically - explicitly documented below, not hidden)
 # ===========================================================================
 anchor_rows = []
 sibling_rows = []
@@ -91,8 +93,8 @@ K = len(sibling_df)
 assert sibling_df["patient_id"].is_unique
 assert set(sibling_df["patient_id"]) <= set(anchor_df["patient_id"])
 
-# cross-check vs cohort dedup anchor set: laporkan berapa pasien yg anchor
-# image-nya BERBEDA (krn ada citra tambahan yg lbh awal leksikografis)
+# cross-check vs the dedup-cohort anchor set: report how many patients have a
+# DIFFERENT anchor image (because an additional image sorts earlier lexicographically)
 dedup_anchor = pd.read_csv(MANIFESTS / "controlled_anchor_test.csv")
 dedup_anchor_map = dedup_anchor.set_index("patient_id")["relative_path"].to_dict()
 changed_anchor = [
@@ -107,7 +109,7 @@ print(f"[6.3] Sibling set K={K} (dedup cohort K=146), class distribution: "
       f"{sibling_df['label'].value_counts().to_dict()}")
 
 # ===========================================================================
-# 6.4 Kondisi A - Clean patient-grouped
+# 6.4 Condition A - Clean patient-grouped
 # ===========================================================================
 test_patients = set(test_df["patient_id"])
 leaking_in_train = train_df[train_df["patient_id"].isin(test_patients)]
@@ -135,10 +137,10 @@ print(f"[6.4] Clean train: {len(clean_train_df)} images, {clean_train_df['patien
       f"(repeated MD5 within clean train={n_dup_clean})")
 print(f"      Clean validation: {len(clean_val_df)} images, {clean_val_df['patient_id'].nunique()} patients")
 print(f"      patient_overlap(train,val)=0 patient_overlap(train,test)=0 patient_overlap(val,test)=0 "
-      f"-- semua guarantee patient-level tetap OK (perbedaan dgn dedup cohort HANYA di level MD5/image)")
+      f"-- all patient-level guarantees still OK (the difference vs the dedup cohort is ONLY at the MD5/image level)")
 
 # ===========================================================================
-# 6.5 Kondisi B - Controlled patient leakage (logika identik Fase 1)
+# 6.5 Condition B - Controlled patient leakage (logic identical to Phase 1)
 # ===========================================================================
 rng = random.Random(SEED)
 
@@ -220,14 +222,15 @@ print(f"[6.5] Leaky train patient-overlap with anchor test = {len(leaky_overlap_
       f"(must equal K={K}) -- OK")
 
 # ===========================================================================
-# Dokumentasikan known MD5 exception (IM-0095/IM-0096) - cek di mana posisinya
-# relatif thd anchor/sibling/clean_train/leaky_train supaya QC gate tahu
-# persis exception mana yg di-allowlist.
+# Document the known MD5 exception (IM-0095/IM-0096) - check where it sits
+# relative to anchor/sibling/clean_train/leaky_train so the QC gate knows
+# exactly which exception is allowlisted.
 # ===========================================================================
-# NB: relative_path memakai prefix folder SUMBER Kaggle asli (mis. "test/..."),
-# BUKAN experimental_split hasil patient-grouping - kedua citra ini sama-sama
-# berasal dari folder sumber "test/NORMAL/" tapi diberi experimental_split
-# BERBEDA (IM-0095 -> test, IM-0096 -> train) krn patient_id berbeda.
+# NB: relative_path uses the original Kaggle SOURCE folder prefix (e.g. "test/..."),
+# NOT the experimental_split resulting from patient-grouping - both images
+# originate from the same source folder "test/NORMAL/" but are assigned
+# DIFFERENT experimental_split values (IM-0095 -> test, IM-0096 -> train)
+# because their patient_id differs.
 known_pair = {"a": "test/NORMAL/NORMAL2-IM-0095-0001.jpeg", "b": "test/NORMAL/NORMAL2-IM-0096-0001.jpeg"}
 
 def locate(path, dfs):
@@ -252,11 +255,11 @@ known_exceptions_df = pd.DataFrame([{
     "relative_path_2": known_pair["b"], "found_in_2": ";".join(loc_b),
     "md5": md5_map.get(known_pair["a"]),
     "reason": "exact_duplicate_md5_identical_but_source_patient_id_differs_(IM-0095_test_vs_IM-0096_train); "
-              "sengaja disertakan di cohort non-dedup per keputusan user 2026-08-02 - INI JUSTRU YANG DIUJI",
+              "deliberately included in the non-dedup cohort per user decision 2026-08-02 - THIS IS EXACTLY WHAT IS BEING TESTED",
 }])
 
 # ===========================================================================
-# 6.6 Tulis lima manifest (+ dokumentasi known exception)
+# 6.6 Write the five manifests (+ known-exception documentation)
 # ===========================================================================
 COLS = ["image_id", "relative_path", "filename", "label", "patient_id",
         "experimental_split", "condition", "cohort", "selection_rule", "selection_seed"]

@@ -1,44 +1,53 @@
 """predict_anchor_test_e_contrast.py
 
-Eksperimen E (protokol §28) - dimensi terakhir yang belum dijalankan:
-robustness terhadap brightness/contrast. Empat dimensi lain (noise, blur,
-compression, resolution) sudah dieksekusi sebagai "Eksperimen B" (lihat
-experiment_b_deliverables/). Skrip ini melengkapi E jadi 5/5 dimensi.
+Experiment E (protocol §28) - the last unexecuted dimension: robustness to
+brightness/contrast. The other four dimensions (noise, blur, compression,
+resolution) were already run as "Experiment B" (see
+experiment_b_deliverables/). This script completes E to 5/5 dimensions.
 
-Desain (mengikuti pola exp_b_degrade_infer.py, DIKUNCI CLAUDE.md §9 Eksperimen B):
-  - INFERENSI SAJA, tanpa training. Anchor test sudah terbuka sejak Fase 5 Eksperimen A
-    -> hasil skrip ini EXPLORATORY (protokol §24), tidak mengubah kesimpulan confirmatory A.
-  - Memakai 15 checkpoint CLEAN Eksperimen A (3 arsitektur x 5 seed) - checkpoint
-    'leaky' TIDAK dipakai (samakan dengan Eksperimen B, yang juga hanya pakai clean).
-  - Titik degradasi = preprocess: grayscale -> square-pad -> resize 224 (uint8) ->
-    APPLY brightness/contrast -> replikasi 3-channel -> ToTensor -> normalisasi ImageNet.
-    Sama seperti titik degradasi Eksperimen B (bukan native-image).
-  - Severity dikunci di CLAUDE.md §9 (baris "Brightness/Contrast +- (opsional)"):
+Design (follows the pattern of exp_b_degrade_infer.py, LOCKED in CLAUDE.md §9
+Experiment B):
+  - INFERENCE ONLY, no training. The anchor test has been open since
+    Experiment A Phase 5 -> this script's results are EXPLORATORY (protocol
+    §24), they do not change the Experiment A confirmatory conclusions.
+  - Uses the 15 CLEAN Experiment A checkpoints (3 architectures x 5 seeds) -
+    the 'leaky' checkpoints are NOT used (matching Experiment B, which also
+    only uses clean).
+  - Degradation insertion point = preprocess: grayscale -> square-pad ->
+    resize 224 (uint8) -> APPLY brightness/contrast -> replicate to 3
+    channels -> ToTensor -> ImageNet normalization. Same insertion point as
+    Experiment B's degradations (not native-image).
+  - Severity locked in CLAUDE.md §9 (row "Brightness/Contrast +- (optional)"):
     level 1/2/3 = 20% / 35% / 50%.
-  - KEPUTUSAN DESAIN (baru, didokumentasikan di sini karena tabel CLAUDE.md hanya
-    menulis magnitudo "+-" tanpa menetapkan arah): brightness & contrast diturunkan
-    (factor = 1 - pct), bukan dinaikkan atau diacak arah. Alasan: 4 dimensi degradasi
-    lain di Eksperimen B semuanya derajat kerusakan searah (noise naik, blur naik,
-    kualitas JPEG turun, resolusi turun) - citra makin sulit dibaca, bukan bidirectional
-    stress test. Menurunkan brightness+contrast konsisten dengan itu (radiograf under-
-    exposed/low-contrast = kegagalan realistis kualitas akuisisi). Deterministik penuh
-    (bukan proses acak) - tidak perlu seeding per-citra seperti noise Gaussian.
-  - Kondisi 'clean' (severity 0) TIDAK diulang di sini - sudah ada di
-    experiment_b_deliverables/source_csv/exp_b_metrics.csv (transform='clean'), dipakai
-    bersama saat menggabungkan kurva robustness E lengkap.
-  - Skema metrik output SAMA PERSIS dengan exp_b_metrics.csv (arch, seed, transform,
-    severity, auroc, auprc, sensitivity, specificity, balanced_accuracy, f1, brier, nll, ece)
-    supaya bisa langsung digabung (pd.concat) dengan hasil B saat menulis laporan E.
+  - DESIGN DECISION (new, documented here because the CLAUDE.md table only
+    states the "+-" magnitude without fixing a direction): brightness &
+    contrast are DECREASED (factor = 1 - pct), not increased or randomized in
+    direction. Rationale: the other 4 degradation dimensions in Experiment B
+    are all one-directional degrees of damage (noise up, blur up, JPEG
+    quality down, resolution down) - the image gets harder to read, this is
+    not a bidirectional stress test. Decreasing brightness+contrast is
+    consistent with that (an under-exposed/low-contrast radiograph is a
+    realistic acquisition-quality failure). Fully deterministic (not a
+    random process) - no need for per-image seeding like Gaussian noise.
+  - The 'clean' condition (severity 0) is NOT repeated here - it already
+    exists in experiment_b_deliverables/source_csv/exp_b_metrics.csv
+    (transform='clean'), used together when combining the full E robustness
+    curves.
+  - The output metrics schema is IDENTICAL to exp_b_metrics.csv (arch, seed,
+    transform, severity, auroc, auprc, sensitivity, specificity,
+    balanced_accuracy, f1, brier, nll, ece) so it can be directly concatenated
+    (pd.concat) with the B results when writing the E report.
 
-Jalankan di lingkungan tempat 15 checkpoint clean EXP_A tersedia (Hub, sama seperti
-predict_anchor_test.py / exp_b_degrade_infer.py sebelumnya):
+Run in an environment where the 15 clean EXP_A checkpoints are available
+(Hub, same as previously used for predict_anchor_test.py /
+exp_b_degrade_infer.py):
 
     export CHEST_XRAY_DATA_ROOT=$HOME/chest_xray/chest_xray
     python src/predict_anchor_test_e_contrast.py
 
 Output:
-    experiments/experiment_e/metrics/exp_e_contrast_metrics.csv   (metrik agregat, 45 baris = 15 ckpt x 3 severity)
-    experiments/experiment_e/predictions/*.anchor_predictions.csv (prediksi per-run per-severity, format sama predict_anchor_test.py)
+    experiments/experiment_e/metrics/exp_e_contrast_metrics.csv   (aggregate metrics, 45 rows = 15 ckpt x 3 severity)
+    experiments/experiment_e/predictions/*.anchor_predictions.csv (per-run per-severity predictions, same format as predict_anchor_test.py)
 """
 from __future__ import annotations
 
@@ -166,9 +175,9 @@ def main():
     )
     if len(ckpts) < 15:
         raise SystemExit(
-            f"Ditemukan {len(ckpts)} checkpoint clean (butuh 15 = 3 arsitektur x 5 seed). "
-            "Jalankan skrip ini di lingkungan yang punya checkpoint Eksperimen A lengkap "
-            "(mis. Hub, direktori yang sama dipakai predict_anchor_test.py / Eksperimen B)."
+            f"Found {len(ckpts)} clean checkpoints (need 15 = 3 architectures x 5 seeds). "
+            "Run this script in an environment with the full Experiment A checkpoints "
+            "(e.g. Hub, the same directory used by predict_anchor_test.py / Experiment B)."
         )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -189,14 +198,14 @@ def main():
     metric_rows = []
 
     print("=" * 70)
-    print(f"EKSPERIMEN E - brightness/contrast ({len(ckpts)} checkpoint clean x 3 severity)")
-    print("EXPLORATORY (anchor test sudah terbuka sejak Fase 5 Eksperimen A).")
+    print(f"EXPERIMENT E - brightness/contrast ({len(ckpts)} clean checkpoints x 3 severity)")
+    print("EXPLORATORY (the anchor test has been open since Experiment A Phase 5).")
     print("=" * 70)
 
     for ckpt_path in ckpts:
         m = CKPT_RE.match(ckpt_path.name)
         if not m:
-            print(f"  [skip] nama checkpoint tak dikenal: {ckpt_path.name}")
+            print(f"  [skip] unrecognized checkpoint name: {ckpt_path.name}")
             continue
         arch, seed = m["arch"], int(m["seed"])
         run_id = ckpt_path.name[: -len(".best.pt")]
@@ -246,9 +255,9 @@ def main():
     out.to_csv(out_path, index=False)
     print("-" * 70)
     print(f"anchor_manifest_sha256: {anchor_sha}")
-    print(f"Metrik: {out_path} ({len(out)} baris = 15 checkpoint x 3 severity)")
-    print("Gabungkan dengan experiment_b_deliverables/source_csv/exp_b_metrics.csv "
-          "(kolom sama) untuk kurva robustness Eksperimen E lengkap (5/5 dimensi).")
+    print(f"Metrics: {out_path} ({len(out)} rows = 15 checkpoints x 3 severity)")
+    print("Combine with experiment_b_deliverables/source_csv/exp_b_metrics.csv "
+          "(same columns) for the full Experiment E robustness curves (5/5 dimensions).")
 
 
 if __name__ == "__main__":

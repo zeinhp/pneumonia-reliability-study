@@ -1,20 +1,21 @@
 """predict_anchor_test.py
 
-Fase 5 (protokol bagian 22 Fase 5, 13.2, 19.3): inferensi SATU KALI pada common
-anchor test set, dijalankan HANYA setelah seluruh checkpoint Fase 4 terkunci.
+Phase 5 (protocol section 22 Phase 5, 13.2, 19.3): ONE-TIME inference on the
+common anchor test set, run ONLY after all Phase 4 checkpoints are locked.
 
-Ini titik di mana test set dibuka untuk PERTAMA kalinya. Setelah ini tidak boleh
-ada perubahan training (protokol bagian 24). Skrip ini murni inferensi:
-memuat tiap checkpoint terbaik, menjalankan model pada anchor test, dan menulis
-satu CSV prediksi per run (kolom sesuai protokol 19.3) + ringkasan metrik.
+This is the point where the test set is opened for the FIRST time. After this
+no training changes are allowed (protocol section 24). This script is pure
+inference: it loads each best checkpoint, runs the model on the anchor test,
+and writes one prediction CSV per run (columns per protocol 19.3) plus a
+metrics summary.
 
-Guard: menolak jalan bila jumlah checkpoint non-smoke < jumlah run wajib (default
-30) kecuali diberi --allow-partial. Ini mencegah membuka test sebelum semua
-checkpoint terkunci.
+Guard: refuses to run if the number of non-smoke checkpoints is < the
+required number of runs (default 30) unless --allow-partial is given. This
+prevents opening the test set before all checkpoints are locked.
 
-Contoh:
-    python src/predict_anchor_test.py            # butuh 30 checkpoint
-    python src/predict_anchor_test.py --allow-partial   # untuk uji coba
+Example:
+    python src/predict_anchor_test.py            # requires 30 checkpoints
+    python src/predict_anchor_test.py --allow-partial   # for trial runs
 """
 from __future__ import annotations
 
@@ -37,21 +38,21 @@ CKPT_RE = re.compile(
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Fase 5: anchor-test inference (one-shot).")
+    p = argparse.ArgumentParser(description="Phase 5: anchor-test inference (one-shot).")
     p.add_argument("--config", default=None)
     p.add_argument("--checkpoints-dir", default=None)
     p.add_argument("--out-dir", default=None)
     p.add_argument("--metrics-dir", default=None,
-                   help="Folder untuk anchor_test_metrics_summary.csv. Default: sama dgn "
-                        "--out-dir bila diberikan, kalau tidak experiments/experiment_a/metrics "
-                        "(demi kompatibilitas run lama). SELALU set eksplisit saat memakai "
-                        "--output-root/--checkpoints-dir non-default agar tidak menimpa "
-                        "ringkasan Eksperimen A.")
+                   help="Folder for anchor_test_metrics_summary.csv. Default: same as "
+                        "--out-dir if given, otherwise experiments/experiment_a/metrics "
+                        "(for backward compatibility with old runs). ALWAYS set explicitly "
+                        "when using a non-default --output-root/--checkpoints-dir so it "
+                        "doesn't overwrite the Experiment A summary.")
     p.add_argument("--device", default="cuda")
     p.add_argument("--require", type=int, default=30,
-                   help="Jumlah checkpoint non-smoke yang wajib ada sebelum membuka test.")
+                   help="Number of non-smoke checkpoints required before opening the test set.")
     p.add_argument("--allow-partial", action="store_true",
-                   help="Izinkan jalan walau checkpoint < --require (untuk uji, BUKAN confirmatory).")
+                   help="Allow running even if checkpoints < --require (for trial runs, NOT confirmatory).")
     return p.parse_args()
 
 
@@ -79,11 +80,11 @@ def main():
     if args.metrics_dir:
         metrics_dir = Path(args.metrics_dir)
     elif args.out_dir:
-        # --out-dir diset (analisis non-default) tapi --metrics-dir tidak -> jangan
-        # diam-diam menimpa experiments/experiment_a/metrics milik Eksperimen A.
+        # --out-dir is set (non-default analysis) but --metrics-dir is not -> don't
+        # silently overwrite Experiment A's experiments/experiment_a/metrics.
         metrics_dir = out_dir.parent / "metrics"
-        print(f"  [info] --metrics-dir tidak diberikan, memakai {metrics_dir} "
-              f"(derived dari --out-dir) supaya tidak menimpa metrics Eksperimen A.")
+        print(f"  [info] --metrics-dir not given, using {metrics_dir} "
+              f"(derived from --out-dir) so Experiment A's metrics aren't overwritten.")
     else:
         metrics_dir = exp_root / "metrics"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -95,14 +96,14 @@ def main():
     )
     if len(ckpts) < args.require and not args.allow_partial:
         raise SystemExit(
-            f"SAFETY ABORT: hanya {len(ckpts)} checkpoint ditemukan, butuh {args.require} "
-            "sebelum membuka anchor test. Selesaikan semua run Fase 4 dulu, atau pakai "
-            "--allow-partial HANYA untuk uji (hasilnya bukan confirmatory)."
+            f"SAFETY ABORT: only {len(ckpts)} checkpoints found, {args.require} required "
+            "before opening the anchor test. Finish all Phase 4 runs first, or use "
+            "--allow-partial ONLY for trial runs (results are not confirmatory)."
         )
 
     print("=" * 70)
-    print(f"FASE 5 - MEMBUKA ANCHOR TEST SET ({len(ckpts)} checkpoint)")
-    print("Setelah titik ini tidak boleh ada perubahan training (protokol bagian 24).")
+    print(f"PHASE 5 - OPENING THE ANCHOR TEST SET ({len(ckpts)} checkpoints)")
+    print("After this point no training changes are allowed (protocol section 24).")
     print("=" * 70)
 
     device = torch.device(args.device if torch.cuda.is_available() or args.device == "cpu" else "cpu")
@@ -129,7 +130,7 @@ def main():
     for ckpt_path in ckpts:
         m = CKPT_RE.match(ckpt_path.name)
         if not m:
-            print(f"  [skip] nama checkpoint tak dikenal: {ckpt_path.name}")
+            print(f"  [skip] unrecognized checkpoint name: {ckpt_path.name}")
             continue
         arch, cond, seed = m["arch"], m["condition"], int(m["seed"])
         run_id = ckpt_path.name[:-len(".best.pt")]
@@ -142,7 +143,7 @@ def main():
         metrics, loss, preds = engine.evaluate(
             model, loader, criterion, device, threshold, collect_predictions=True)
 
-        # per-run prediction CSV (protokol 19.3)
+        # per-run prediction CSV (protocol 19.3)
         df = pd.DataFrame(preds)
         df.insert(0, "seed", seed)
         df.insert(0, "condition", cond)
@@ -165,9 +166,9 @@ def main():
     summary_path = metrics_dir / "anchor_test_metrics_summary.csv"
     summary.to_csv(summary_path, index=False)
     print("-" * 70)
-    print(f"Prediksi per-run: {out_dir}")
-    print(f"Ringkasan metrik: {summary_path}  ({len(summary)} run)")
-    print("Fase 5 selesai. Lanjut Fase 7 (statistik) memakai file prediksi ini.")
+    print(f"Per-run predictions: {out_dir}")
+    print(f"Metrics summary: {summary_path}  ({len(summary)} runs)")
+    print("Phase 5 done. Proceed to Phase 7 (statistics) using these prediction files.")
 
 
 if __name__ == "__main__":

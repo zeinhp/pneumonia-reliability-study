@@ -1,9 +1,9 @@
 """
 validate_controlled_manifests.py
 
-Implementasi lengkap protokol bagian 6.7: validasi manifest terkontrol
-sebelum training Eksperimen A boleh dimulai. Semua check di sini CORE -
-kegagalan apapun membuat proses exit non-zero. Read-only.
+Full implementation of protocol section 6.7: validation of the controlled
+manifests before Experiment A training may begin. All checks here are CORE -
+any failure makes the process exit non-zero. Read-only.
 
 Writes: data/reports/controlled_manifest_validation_report.json
 """
@@ -45,14 +45,14 @@ manifest_src = pd.read_csv(AUDIT / "manifest.csv")
 manifest_src["relative_path"] = manifest_src["split"] + "/" + manifest_src["label"] + "/" + manifest_src["filename"]
 md5_map = manifest_src.set_index("relative_path")["md5"]
 
-# 1. anchor test tepat satu citra per pasien
+# 1. anchor test has exactly one image per patient
 dup_patient = anchor["patient_id"].duplicated().sum()
 check("anchor_exactly_one_image_per_patient", len(anchor) == 279 and dup_patient == 0,
       f"n={len(anchor)}, duplicated patient_id rows={dup_patient}")
 
-# 2. anchor test identik dipakai clean & leaky (di sini hanya ada SATU file anchor,
-#    dipakai oleh kedua kondisi by construction - verifikasi tidak ada file terpisah
-#    yang menyimpang, dan train manapun tidak mengandung relative_path anchor)
+# 2. the anchor test is used identically by clean & leaky (there is only ONE anchor
+#    file here, used by both conditions by construction - verify there is no
+#    separate divergent file, and that neither train set contains an anchor relative_path)
 anchor_paths = set(anchor["relative_path"])
 leak_in_clean_train = anchor_paths & set(clean_train["relative_path"])
 leak_in_leaky_train = anchor_paths & set(leaky_train["relative_path"])
@@ -61,22 +61,22 @@ check("anchor_test_not_leaked_into_any_train_or_validation",
       len(leak_in_clean_train) == 0 and len(leak_in_leaky_train) == 0 and len(leak_in_val) == 0,
       f"clean_train={len(leak_in_clean_train)} leaky_train={len(leak_in_leaky_train)} val={len(leak_in_val)}")
 
-# 3. validation identik antara clean dan leaky (satu file dipakai bersama - protokol
-#    tidak mensyaratkan file leaky_validation terpisah; verifikasi tidak ada drift)
+# 3. validation is identical between clean and leaky (one file shared by both - the
+#    protocol does not require a separate leaky_validation file; verify there is no drift)
 check("validation_shared_identically_by_clean_and_leaky", True,
       "single controlled_clean_validation.csv is used unmodified for both conditions by design")
 
-# 4. jumlah training clean dan leaky sama
+# 4. clean and leaky training set sizes are equal
 check("train_size_clean_equals_leaky", len(clean_train) == len(leaky_train),
       f"clean={len(clean_train)} leaky={len(leaky_train)}")
 
-# 5. distribusi kelas sebanding
+# 5. class distributions are comparable
 clean_class = clean_train["label"].value_counts().sort_index()
 leaky_class = leaky_train["label"].value_counts().sort_index()
 check("class_distribution_train_comparable", clean_class.equals(leaky_class),
       f"clean={clean_class.to_dict()} leaky={leaky_class.to_dict()}")
 
-# 6. repeated MD5 (dalam masing-masing train, dan across anchor+train per kondisi)
+# 6. repeated MD5 (within each train set, and across anchor+train per condition)
 for name, df in [("clean_train", clean_train), ("leaky_train", leaky_train),
                   ("anchor_test", anchor), ("clean_validation", clean_val)]:
     md5s = df["relative_path"].map(md5_map)
@@ -89,20 +89,20 @@ for name, train_df in [("clean", clean_train), ("leaky", leaky_train)]:
     n_dup = int(md5s.duplicated().sum())
     check(f"no_repeated_md5_across_train_val_test__{name}", n_dup == 0, f"{n_dup} repeated md5")
 
-# 7. tidak ada path yang muncul di train DAN test (untuk masing-masing kondisi)
+# 7. no path appears in both train AND test (for each condition)
 for name, train_df in [("clean", clean_train), ("leaky", leaky_train)]:
     overlap_paths = set(train_df["relative_path"]) & anchor_paths
     check(f"no_path_overlap_train_test__{name}", len(overlap_paths) == 0, f"{len(overlap_paths)} overlapping paths")
 
-# 8. kondisi clean tidak punya patient overlap (train-val, train-test, val-test)
+# 8. the clean condition has no patient overlap (train-val, train-test, val-test)
 c_tv = set(clean_train["patient_id"]) & set(clean_val["patient_id"])
 c_tt = set(clean_train["patient_id"]) & set(anchor["patient_id"])
 c_vt = set(clean_val["patient_id"]) & set(anchor["patient_id"])
 check("clean_condition_zero_patient_overlap", len(c_tv) == 0 and len(c_tt) == 0 and len(c_vt) == 0,
       f"train-val={len(c_tv)} train-test={len(c_tt)} val-test={len(c_vt)}")
 
-# 9. kondisi leaky punya patient overlap PERSIS sesuai peta kontaminasi (K patients), tidak
-#    lebih tidak kurang, dan hanya di train-test (val tetap steril)
+# 9. the leaky condition has patient overlap EXACTLY matching the contamination map
+#    (K patients), no more no less, and only in train-test (val stays clean/sterile)
 l_tt = set(leaky_train["patient_id"]) & set(anchor["patient_id"])
 l_tv = set(leaky_train["patient_id"]) & set(clean_val["patient_id"])
 l_vt = set(clean_val["patient_id"]) & set(anchor["patient_id"])
@@ -112,7 +112,7 @@ check("leaky_condition_patient_overlap_matches_contamination_map_exactly",
       f"train-test overlap={len(l_tt)} (planned K={len(planned)}, match={l_tt == planned}); "
       f"train-val={len(l_tv)}; val-test={len(l_vt)}")
 
-# 10. sibling pada kondisi leaky berasal dari pasien anchor test (bukan dari luar)
+# 10. siblings in the leaky condition originate from anchor test patients (not from outside)
 sibling_patients_in_map = set(repl_map["sibling_patient_id"])
 check("all_siblings_originate_from_anchor_test_patients",
       sibling_patients_in_map <= set(anchor["patient_id"]),
@@ -124,13 +124,13 @@ bad_replaced = replaced_patients & (set(clean_val["patient_id"]) | set(anchor["p
 check("replacement_images_not_from_validation_or_test_patients", len(bad_replaced) == 0,
       f"{len(bad_replaced)} replaced patients found in validation/test")
 
-# max-1-per-patient check for replacement (protocol: "sebisa mungkin")
+# max-1-per-patient check for replacement (protocol: "as far as possible")
 repl_counts = repl_map["replaced_patient_id"].value_counts()
 n_multi = int((repl_counts > 1).sum())
 check("replacement_max_one_image_per_training_patient", n_multi == 0,
       f"{n_multi} training patients had >1 image replaced")
 
-# 11. source checksum tidak berubah
+# 11. source checksums have not changed
 sha_df = pd.read_csv(CHECKSUMS / "source_audit_sha256.csv")
 mismatches = []
 for _, r in sha_df.iterrows():

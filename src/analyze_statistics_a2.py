@@ -1,29 +1,31 @@
 """analyze_statistics_a2.py
 
-Fase 7 untuk Eksperimen A2 (varying-draw leakage replication, CLAUDE.md #6b poin 2).
-IDENTIK logic-nya dgn analyze_statistics.py (Fase 7 Eksperimen A) dan
-analyze_statistics_sensitivity_dedup.py - satu-satunya beda adalah sumber prediksi
-(`experiment_a2/predictions`, run_id prefix `EXP_A__a2__...`) dan folder output
-(`experiment_a2/statistics`). Dibuat sebagai skrip terpisah supaya skrip
-confirmatory Eksperimen A yang asli (analyze_statistics.py) TIDAK disentuh sama
-sekali (protokol §24: tidak boleh mengubah confirmatory analysis).
+Phase 7 for Experiment A2 (varying-draw leakage replication, CLAUDE.md #6b
+point 2). IDENTICAL logic to analyze_statistics.py (Phase 7 Experiment A) and
+analyze_statistics_sensitivity_dedup.py - the only differences are the
+prediction source (`experiment_a2/predictions`, run_id prefix
+`EXP_A__a2__...`) and the output folder (`experiment_a2/statistics`). Written
+as a separate script so the original Experiment A confirmatory script
+(analyze_statistics.py) is NOT touched at all (protocol §24: confirmatory
+analysis must not be modified).
 
-EXPLORATORY (§24) - bukan bagian confirmatory Eksperimen A. Tujuan utama A2:
-di Eksperimen A, sibling yang disisipkan ke leaky_train (K=146) SATU draw
-tetap (deterministik protokol 6.3) dipakai untuk kelima seed model. Di A2,
-exclusion/replacement (protokol 6.5, yaitu CITRA CLEAN yang dikeluarkan utk
-menjaga ukuran train) divariasikan per model-seed (draw_seed=model_seed:
-42/123/456/789/2026) - sibling yang disisipkan sendiri TETAP deterministik
-sama persis Eksperimen A. Pertanyaan A2: apakah variasi pola exclusion/
-replacement ini menambah lebar interval ketidakpastian efek-leakage
-dibanding Eksperimen A (yang hanya py 1 draw tetap, jadi variasi
-antar-seed HANYA berasal dari noise training/inisialisasi, bukan dari
-variasi pola kontaminasi).
+EXPLORATORY (§24) - not part of the Experiment A confirmatory analysis. Main
+goal of A2: in Experiment A, the siblings inserted into leaky_train (K=146)
+used a SINGLE fixed draw (deterministic per protocol 6.3) shared across all
+five model seeds. In A2, the exclusion/replacement (protocol 6.5, i.e. the
+CLEAN IMAGES removed to keep the train set size constant) is varied per
+model-seed (draw_seed=model_seed: 42/123/456/789/2026) - the inserted
+siblings themselves remain deterministic, identical to Experiment A. A2's
+question: does varying this exclusion/replacement pattern widen the
+uncertainty interval of the leakage effect compared to Experiment A (which
+used only 1 fixed draw, so between-seed variation there comes ONLY from
+training/initialization noise, not from variation in the contamination
+pattern).
 
-Output ke experiments/experiment_a2/statistics/:
-  - clean_vs_leaky_per_run.csv        (satu baris per arch x seed, sama skema A)
-  - clean_vs_leaky_per_architecture.csv (agregat per arsitektur, sama skema A)
-  - a2_vs_expA_ci_width_comparison.csv (analisis tambahan khusus A2)
+Output to experiments/experiment_a2/statistics/:
+  - clean_vs_leaky_per_run.csv        (one row per arch x seed, same schema as A)
+  - clean_vs_leaky_per_architecture.csv (per-architecture aggregate, same schema as A)
+  - a2_vs_expA_ci_width_comparison.csv (additional A2-specific analysis)
 """
 from __future__ import annotations
 
@@ -44,8 +46,8 @@ N_BOOT = 2000
 BOOT_SEED = 42
 ARCHS = ["densenet121", "efficientnet_b0", "swin_tiny"]
 
-# Sumber Eksperimen A (satu draw tetap) untuk perbandingan lebar CI. Path ini
-# adalah source_csv freeze deliverable A - dibaca read-only, tidak pernah ditulis.
+# Experiment A source (single fixed draw) for the CI-width comparison. This
+# path is the frozen deliverable A source_csv - read-only, never written to.
 EXP_A_PER_RUN_CSV = Path(
     r"D:\Claude\Pneumonia\experiment_a_deliverables\source_csv\statistics\clean_vs_leaky_per_run.csv"
 )
@@ -143,9 +145,9 @@ def stouffer(pvals, signs):
 def compute_core(pred_dir: Path, out_dir: Path, run_glob: str):
     files = sorted(pred_dir.glob(run_glob))
     if not files:
-        raise SystemExit(f"Tidak ada file prediksi di {pred_dir} (pola {run_glob}). Jalankan Fase 5 dulu.")
+        raise SystemExit(f"No prediction files found in {pred_dir} (pattern {run_glob}). Run Phase 5 first.")
     if len(files) != 30:
-        print(f"  [warn] ditemukan {len(files)} file prediksi, ekspektasi 30.")
+        print(f"  [warn] found {len(files)} prediction files, expected 30.")
     df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
 
     per_run_rows, per_arch_rows = [], []
@@ -209,24 +211,26 @@ def compute_core(pred_dir: Path, out_dir: Path, run_glob: str):
 
 
 def compare_ci_width_to_exp_a(pr_a2: pd.DataFrame, pa_a2: pd.DataFrame, out_dir: Path):
-    """Bandingkan lebar ketidakpastian efek-leakage A2 (5 seed, draw bervariasi
-    per model_seed) vs Eksperimen A (5 seed, draw TETAP satu pola). Dua metrik
-    dibandingkan per arsitektur:
-      1. between-seed SD dari dAUROC (dispersi titik-estimasi antar seed) -
-         proxy langsung ketidakpastian "yang mana pola kontaminasi yang benar".
-      2. rata-rata lebar bootstrap-CI per-run (dAUROC_ci_high - dAUROC_ci_low),
-         yaitu ketidakpastian sampling di DALAM tiap run (n=279 anchor) - untuk
-         menunjukkan bahwa within-run CI relatif tidak berubah (karena n dan
-         metode bootstrap sama), sehingga selisih apa pun terutama datang dari
-         between-seed dispersion (poin 1), bukan dari perubahan metode.
-    Kalau file source Eksperimen A tidak ditemukan (mis. dijalankan bukan di
-    lokal), fungsi ini di-skip dengan warning - TIDAK menghentikan Fase 7 A2.
+    """Compare the width of the leakage-effect uncertainty for A2 (5 seeds,
+    draw varying per model_seed) vs Experiment A (5 seeds, one FIXED draw
+    pattern). Two metrics are compared per architecture:
+      1. between-seed SD of dAUROC (dispersion of point estimates across
+         seeds) - a direct proxy for the uncertainty about "which
+         contamination pattern is correct".
+      2. mean per-run bootstrap-CI width (dAUROC_ci_high - dAUROC_ci_low),
+         i.e. the sampling uncertainty WITHIN each run (n=279 anchor) - to
+         show that the within-run CI stays relatively unchanged (since n and
+         the bootstrap method are the same), so any difference mainly comes
+         from between-seed dispersion (point 1), not from a change in method.
+    If the Experiment A source files are not found (e.g. running somewhere
+    other than locally), this function is skipped with a warning - it does
+    NOT stop Phase 7 A2.
     """
     if not (EXP_A_PER_RUN_CSV.exists() and EXP_A_PER_ARCH_CSV.exists()):
-        print(f"  [warn] source Eksperimen A tidak ditemukan di lokasi lokal "
-              f"({EXP_A_PER_RUN_CSV} / {EXP_A_PER_ARCH_CSV}) - lewati perbandingan "
-              f"lebar CI A2 vs Eksperimen A. Jalankan bagian ini di sesi/mesin yang "
-              f"punya akses ke experiment_a_deliverables.")
+        print(f"  [warn] Experiment A source not found at the local location "
+              f"({EXP_A_PER_RUN_CSV} / {EXP_A_PER_ARCH_CSV}) - skipping the "
+              f"A2 vs Experiment A CI-width comparison. Run this part on a "
+              f"session/machine that has access to experiment_a_deliverables.")
         return None
 
     pr_a = pd.read_csv(EXP_A_PER_RUN_CSV)
@@ -253,10 +257,10 @@ def compare_ci_width_to_exp_a(pr_a2: pd.DataFrame, pa_a2: pd.DataFrame, out_dir:
     out = pd.DataFrame(rows)
     out.to_csv(out_dir / "a2_vs_expA_ci_width_comparison.csv", index=False)
 
-    print("\n=== A2 vs Eksperimen A: lebar ketidakpastian efek-leakage (EXPLORATORY) ===")
+    print("\n=== A2 vs Experiment A: leakage-effect uncertainty width (EXPLORATORY) ===")
     for _, r in out.iterrows():
-        wider = "A2 LEBIH LEBAR" if r["sd_ratio_a2_over_expA"] > 1.05 else (
-                "A2 LEBIH SEMPIT" if r["sd_ratio_a2_over_expA"] < 0.95 else "MIRIP")
+        wider = "A2 WIDER" if r["sd_ratio_a2_over_expA"] > 1.05 else (
+                "A2 NARROWER" if r["sd_ratio_a2_over_expA"] < 0.95 else "SIMILAR")
         print(f"  {r['architecture']:16s} between-seed SD: expA={r['expA_dAUROC_sd_betweenSeed']:.4f} "
               f"a2={r['a2_dAUROC_sd_betweenSeed']:.4f} (rasio={r['sd_ratio_a2_over_expA']:.2f}, {wider}); "
               f"within-run CI width: expA={r['expA_mean_withinRun_CIwidth']:.4f} "
@@ -271,7 +275,7 @@ def main():
 
     pr, pa = compute_core(pred_dir, out_dir, "EXP_A__a2__*.anchor_predictions.csv")
 
-    print("=== Fase 7 (Eksperimen A2, EXPLORATORY §24): clean vs leaky per arsitektur ===")
+    print("=== Phase 7 (Experiment A2, EXPLORATORY §24): clean vs leaky per architecture ===")
     for _, r in pa.iterrows():
         print(f"  {r['architecture']:16s} ΔAUROC={r['dAUROC_mean']:+.4f}±{r['dAUROC_sd']:.4f} "
               f"(median {r['dAUROC_median']:+.4f}, range [{r['dAUROC_min']:+.4f},{r['dAUROC_max']:+.4f}]) "

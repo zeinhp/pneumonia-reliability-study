@@ -1,21 +1,22 @@
 """analyze_statistics_sensitivity_dedup.py
 
-Fase 7 utk analisis sensitivity-dedup (protokol §28 "Eksperimen B" asli).
-IDENTIK logic-nya dgn analyze_statistics.py (Fase 7 Eksperimen A) - satu-satunya
-beda adalah sumber prediksi (`experiment_sensitivity_dedup/predictions`, run_id
-prefix `EXP_A__nondedup__...`) dan folder output
-(`experiment_sensitivity_dedup/statistics`). Dibuat sebagai skrip terpisah
-(bukan menambah CLI arg ke analyze_statistics.py) supaya skrip confirmatory
-Eksperimen A yang asli tidak disentuh sama sekali - hasil confirmatory A harus
-tetap seperti apa adanya (protokol §24: tidak boleh mengubah confirmatory
-analysis).
+Phase 7 for the sensitivity-dedup analysis (protocol §28, the original
+"Experiment B"). IDENTICAL logic to analyze_statistics.py (Phase 7 Experiment
+A) - the only differences are the prediction source
+(`experiment_sensitivity_dedup/predictions`, run_id prefix
+`EXP_A__nondedup__...`) and the output folder
+(`experiment_sensitivity_dedup/statistics`). Written as a separate script
+(rather than adding a CLI arg to analyze_statistics.py) so the original
+Experiment A confirmatory script is not touched at all - the Experiment A
+confirmatory results must stay exactly as they are (protocol §24:
+confirmatory analysis must not be modified).
 
-EXPLORATORY (§24) - bukan bagian confirmatory Eksperimen A. Tujuan: bandingkan
-ΔAUROC clean-vs-leaky di cohort non-dedup (5.856 citra) vs cohort dedup
-(Eksperimen A, 5.824 citra) - sensitivity check thd keputusan deduplikasi
-Tahap 1.
+EXPLORATORY (§24) - not part of the Experiment A confirmatory analysis. Goal:
+compare the clean-vs-leaky ΔAUROC in the non-dedup cohort (5,856 images) vs
+the dedup cohort (Experiment A, 5,824 images) - a sensitivity check on the
+Stage 1 deduplication decision.
 
-Output ke experiments/experiment_sensitivity_dedup/statistics/.
+Output to experiments/experiment_sensitivity_dedup/statistics/.
 """
 from __future__ import annotations
 
@@ -130,9 +131,9 @@ def main():
 
     files = sorted(pred_dir.glob("EXP_A__nondedup__*.anchor_predictions.csv"))
     if not files:
-        raise SystemExit(f"Tidak ada file prediksi di {pred_dir}. Jalankan Fase 5 dulu.")
+        raise SystemExit(f"No prediction files found in {pred_dir}. Run Phase 5 first.")
     if len(files) != 30:
-        print(f"  [warn] ditemukan {len(files)} file prediksi, ekspektasi 30.")
+        print(f"  [warn] found {len(files)} prediction files, expected 30.")
     df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
 
     per_run_rows, per_arch_rows = [], []
@@ -153,7 +154,7 @@ def main():
             res = paired_patient_bootstrap(y, pc, pl)
             mp, bcell, ccell = mcnemar_p(y, predc, predl)
 
-            # per-class sens/spec deltas (decision #1 CLAUDE.md, sama Eksp A): PNEUMONIA=1 -> sens; NORMAL=0 -> spec
+            # per-class sens/spec deltas (decision #1 CLAUDE.md, same as Exp A): PNEUMONIA=1 -> sensitivity; NORMAL=0 -> specificity
             sensc, specc = _sens_spec(y, predc); sensl, specl = _sens_spec(y, predl)
 
             daur = res["AUROC"]["observed"]
@@ -196,7 +197,7 @@ def main():
     pd.DataFrame(per_run_rows).to_csv(out_dir / "clean_vs_leaky_per_run.csv", index=False)
     pa.to_csv(out_dir / "clean_vs_leaky_per_architecture.csv", index=False)
 
-    print("=== Fase 7 (sensitivity-dedup, EXPLORATORY §24): clean vs leaky per arsitektur ===")
+    print("=== Phase 7 (sensitivity-dedup, EXPLORATORY §24): clean vs leaky per architecture ===")
     for _, r in pa.iterrows():
         print(f"  {r['architecture']:16s} ΔAUROC={r['dAUROC_mean']:+.4f}±{r['dAUROC_sd']:.4f} "
               f"(median {r['dAUROC_median']:+.4f}, range [{r['dAUROC_min']:+.4f},{r['dAUROC_max']:+.4f}]) "

@@ -1,12 +1,12 @@
 """
 build_controlled_manifests.py
 
-Fase 1 (protokol Eksperimen A, bagian 6.2-6.6): membangun lima manifest
-terkontrol untuk analisis utama (Clean vs Controlled Leaky) di atas cohort
-deduplicated (5.824 citra), memakai split patient-grouped resmi
-(patient_grouped_split_deduplicated.csv) sebagai basis. Tidak menjalankan
-ulang StratifiedGroupKFold, tidak menghitung ulang patient_id/MD5/phash,
-tidak menyentuh file citra fisik.
+Phase 1 (Experiment A protocol, section 6.2-6.6): builds the five controlled
+manifests for the main analysis (Clean vs Controlled Leaky) on top of the
+deduplicated cohort (5,824 images), using the official patient-grouped split
+(patient_grouped_split_deduplicated.csv) as the basis. Does not re-run
+StratifiedGroupKFold, does not recompute patient_id/MD5/phash, and does not
+touch any physical image files.
 
 Output (data/manifests/):
     controlled_anchor_test.csv
@@ -42,7 +42,7 @@ assert len(train_df) == 4607
 assert len(val_df) == 603
 
 # ===========================================================================
-# 6.2 Common anchor test set: 1 citra/pasien, leksikografis pertama
+# 6.2 Common anchor test set: 1 image/patient, lexicographically first
 # ===========================================================================
 anchor_rows = []
 sibling_rows = []  # chosen sibling per eligible patient (K patients)
@@ -73,7 +73,7 @@ print(f"      class distribution: {anchor_class_counts.to_dict()}")
 print(f"[6.3] Sibling set K={K}, class distribution: {sibling_class_counts.to_dict()}")
 
 # ===========================================================================
-# 6.4 Kondisi A - Clean patient-grouped
+# 6.4 Condition A - Clean patient-grouped
 # ===========================================================================
 # sanity: no test-patient images already present in train/validation (guaranteed
 # by the patient-grouped split, verified explicitly here per protocol wording)
@@ -106,7 +106,7 @@ print(f"      patient_overlap(train,val)={len(overlap_train_val)} "
       f"patient_overlap(val,test)={len(overlap_val_test)} repeated_md5=0 -- all guarantees OK")
 
 # ===========================================================================
-# 6.5 Kondisi B - Controlled patient leakage
+# 6.5 Condition B - Controlled patient leakage
 # ===========================================================================
 rng = random.Random(SEED)
 
@@ -126,8 +126,8 @@ for label, n_needed in sib_counts_by_class.items():
     ]
     # group by patient, keep at most 1 candidate image per patient (the
     # lexicographically-first image of that patient) so that a single pass
-    # removes at most one image per training patient ("sebisa mungkin
-    # maksimal satu citra per pasien training")
+    # removes at most one image per training patient ("as far as possible,
+    # at most one image per training patient")
     per_patient_first = (
         class_train.sort_values("relative_path")
         .groupby("patient_id", as_index=False)
@@ -211,7 +211,7 @@ print(f"[6.5] Leaky train patient-overlap with anchor test = {len(leaky_overlap_
       f"(must equal K={K}) -- OK, matches planned contamination map exactly")
 
 # ===========================================================================
-# 6.6 Tulis lima manifest
+# 6.6 Write the five manifests
 # ===========================================================================
 COLS = ["image_id", "relative_path", "filename", "label", "patient_id",
         "experimental_split", "condition", "cohort", "selection_rule", "selection_seed"]
